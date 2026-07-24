@@ -1,0 +1,58 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Tell Tailwind v4 where class names live (replaces the old tailwind.config.js
+   `content` array — v4 is CSS-first, no JS config file needed). */
+@source "../../**/*.php";
+@source "../js/**/*.js";
+
+/* ------------------------------------------------------------------ *
+ * Rodolfo design tokens
+ *
+ * The brand accent is an owned cobalt-indigo, NOT Tailwind's default blue.
+ * Rather than rename `blue-*` across every template, we redefine the blue
+ * colour ramp itself: every existing `text-blue-600`, `bg-blue-600`,
+ * `ring-blue-500`, … utility now renders the brand colour after a recompile.
+ * Per-category accents (inc/category-color.php) layer on top via inline
+ * styles and are unaffected.
+ *
+ * These same values are mirrored as runtime overrides in style.css so the
+ * brand shows even before anyone recompiles.
+ * ------------------------------------------------------------------ */
+@theme {
+  /* Brand cobalt — remaps the blue scale used throughout the theme. */
+  --color-blue-400: #8b97ef; /* dark-mode text / hover */
+  --color-blue-500: #5566e0; /* focus rings */
+  --color-blue-600: #3d54d6; /* primary accent */
+  --color-blue-700: #2f42b5; /* hover / active */
+
+  /* Semantic alias, for new code that wants to be explicit. */
+  --color-brand: #3d54d6;
+
+  /* Typography — Inter body (bundled, inc/fonts.php) + a display serif for
+     hero and post titles, giving the theme an editorial voice. */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua",
+    Palatino, Georgia, "Times New Roman", serif;
+}
+
+/* Display serif utility — applied to hero and article titles in templates. */
+@layer components {
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Safelist — utilities the layout depends on that automated scanning
+ * could miss (some class strings are assembled in PHP). Guarantees the
+ * compiled theme.min.css always contains them, so the temporary
+ * `@backfill` block in style.css can be deleted after the next build.
+ * ------------------------------------------------------------------ */
+@source inline("{gap,gap-x,gap-y,mb,mt,ml,mx,p,px,py,pt,pb,pl,pr,w,h}-{0,1,2,3,4,5,6,8,9,10,12,16,24,52,px,full}");
+@source inline("{left,right,top,bottom}-0 grid-cols-1 m-0");
+@source inline("{sm,md,lg}:grid-cols-{2,3}");
+@source inline("md:{gap,mb,mt,p,px,py,pt,pb}-{6,8,10,12,14,16,32}");
+@source inline("lg:p-12");

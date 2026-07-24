@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Rodolfo">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f172a"></stop>
+      <stop offset="0.6" stop-color="#1e3a8a"></stop>
+      <stop offset="1" stop-color="#2563eb"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="113" fill="url(#g)"></rect>
+  <text x="256" y="290" text-anchor="middle" font-family="-apple-system, &#39;Segoe UI&#39;, Helvetica, Arial, sans-serif" font-weight="700" font-size="318" fill="#ffffff">R</text>
+</svg>

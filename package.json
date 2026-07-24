@@ -1,0 +1,18 @@
+{
+  "name": "rodolfo-theme",
+  "version": "3.10.0",
+  "description": "Build tooling for the Rodolfo WordPress theme (Tailwind CSS v4 CLI).",
+  "license": "GPL-2.0-or-later",
+  "private": true,
+  "scripts": {
+    "build": "tailwindcss -i ./assets/css/input.css -o ./assets/css/theme.min.css --minify",
+    "watch": "tailwindcss -i ./assets/css/input.css -o ./assets/css/theme.min.css --watch",
+    "minify:js": "esbuild assets/js/main.js --minify --outfile=assets/js/main.min.js",
+    "test": "php tests/test-theme.php"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "@tailwindcss/typography": "^0.5.15",
+    "esbuild": "^0.23.0"
+  }
+}

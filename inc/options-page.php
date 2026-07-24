@@ -1,0 +1,828 @@
+<?php
+/**
+ * Theme Options screen — the rendered page.
+ *
+ * Markup only: tabs, panels and fields. The option registry and sanitizers live
+ * in inc/settings.php; export/import/reset and the menu in inc/options-actions.php.
+ *
+ * Extracted from inc/options-page.php in 3.8.0 — a pure structural move, no
+ * behavioural change. See docs/ssot.md for the module map.
+ *
+ * @package Rodolfo
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+// ============================================================
+// THEME OPTIONS PAGE
+// ============================================================
+function rodolfo_theme_options_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+
+    $active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
+    // Ordered to follow the natural setup flow of a new site: identity/footer
+    // first, then social presence, speed tweaks, tracking scripts, and finally
+    // the read-only environment report.
+    $tabs = array(
+        'general'     => __( 'General', 'rodolfo' ),
+        'navigation'  => __( 'Navigation', 'rodolfo' ),
+        'content'     => __( 'Content', 'rodolfo' ),
+        'social'      => __( 'Social Links', 'rodolfo' ),
+        'performance' => __( 'Performance', 'rodolfo' ),
+        'features'    => __( 'Features', 'rodolfo' ),
+        'scripts'     => __( 'Custom Scripts', 'rodolfo' ),
+        'system'      => __( 'System Info', 'rodolfo' ),
+        'docs'        => __( 'Documentation', 'rodolfo' ),
+    );
+
+    // Clamp to a known tab — an unknown ?tab= value would leave no panel active.
+    if ( ! isset( $tabs[ $active_tab ] ) ) {
+        $active_tab = 'general';
+    }
+
+    // Admin notices
+    $notice = isset( $_GET['rodolfo_notice'] ) ? sanitize_key( $_GET['rodolfo_notice'] ) : '';
+    $messages = array(
+        'import_ok'      => array( 'success', __( 'Settings imported successfully.', 'rodolfo' ) ),
+        'import_empty'   => array( 'error',   __( 'No file uploaded. Please select a JSON export file.', 'rodolfo' ) ),
+        'import_invalid' => array( 'error',   __( 'Invalid file. Please upload a valid Rodolfo settings JSON.', 'rodolfo' ) ),
+        'reset_ok'       => array( 'success', __( 'All settings have been reset to defaults.', 'rodolfo' ) ),
+        'setup_ok'       => array( 'success', __( 'Setup complete. Any missing pages were created.', 'rodolfo' ) ),
+        'setup_nothing'  => array( 'success', __( 'Nothing to create — every required page already exists.', 'rodolfo' ) ),
+    );
+    ?>
+    <div class="wrap rodolfo-opts">
+
+        <div class="rodolfo-hero">
+            <div class="rodolfo-hero-titles">
+                <h1>
+                    <?php esc_html_e( 'Theme Options', 'rodolfo' ); ?>
+                    <span class="rodolfo-version">
+                        <?php
+                        /* translators: %s: theme version number */
+                        printf( esc_html__( 'v%s', 'rodolfo' ), esc_html( wp_get_theme()->get( 'Version' ) ) );
+                        ?>
+                    </span>
+                </h1>
+                <p class="rodolfo-hero-sub"><?php esc_html_e( 'Configure your site\'s footer, social links, performance, and scripts.', 'rodolfo' ); ?></p>
+            </div>
+            <div class="rodolfo-topbar-actions">
+                <!-- Export -->
+                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                    <?php wp_nonce_field( 'rodolfo_export_settings' ); ?>
+                    <input type="hidden" name="action" value="rodolfo_export_settings" />
+                    <button type="submit" class="button"><?php esc_html_e( 'Export Settings', 'rodolfo' ); ?></button>
+                </form>
+                <!-- Import -->
+                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
+                    <?php wp_nonce_field( 'rodolfo_import_settings' ); ?>
+                    <input type="hidden" name="action" value="rodolfo_import_settings" />
+                    <label class="button rodolfo-import-label">
+                        <?php esc_html_e( 'Import Settings', 'rodolfo' ); ?>
+                        <input type="file" name="rodolfo_import_file" accept=".json" style="display:none" onchange="this.form.submit()" />
+                    </label>
+                </form>
+            </div>
+        </div>
+
+        <?php if ( $notice && isset( $messages[ $notice ] ) ) :
+            list( $type, $msg ) = $messages[ $notice ];
+            echo '<div class="notice notice-' . esc_attr( $type ) . ' is-dismissible"><p>' . esc_html( $msg ) . '</p></div>';
+        endif; ?>
+
+        <nav class="rodolfo-tabs">
+            <?php foreach ( $tabs as $slug => $label ) : ?>
+                <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'rodolfo-theme-options', 'tab' => $slug ), admin_url( 'themes.php' ) ) ); ?>"
+                   class="rodolfo-tab-btn<?php echo $slug === $active_tab ? ' is-active' : ''; ?>"
+                   data-tab="<?php echo esc_attr( $slug ); ?>">
+                    <?php echo esc_html( $label ); ?>
+                </a>
+            <?php endforeach; ?>
+        </nav>
+
+        <form method="post" action="options.php" id="rodolfo-options-form">
+            <?php settings_fields( 'rodolfo_options_group' ); ?>
+            <input type="hidden" name="rodolfo_active_tab" id="rodolfo-active-tab" value="<?php echo esc_attr( $active_tab ); ?>" />
+
+            <!-- GENERAL TAB -->
+            <div class="rodolfo-panel<?php echo 'general' === $active_tab ? ' is-active' : ''; ?>" data-panel="general">
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Footer text', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'The copyright line shown at the bottom of every page.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_footer_text"><?php esc_html_e( 'Copyright line', 'rodolfo' ); ?></label>
+                            <input type="text" id="rodolfo_footer_text" name="rodolfo_footer_text"
+                                   value="<?php echo esc_attr( get_option( 'rodolfo_footer_text' ) ); ?>"
+                                   class="regular-text" />
+                            <p class="description"><?php esc_html_e( 'Replaces the auto-generated "Site Name blogging since YEAR" text. Leave blank to use the default.', 'rodolfo' ); ?></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Footer links', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'The Sitemap URL for the footer. Privacy uses the page set in Settings → Privacy; Terms, Accessibility and other pages are managed under the Navigation tab.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_link_sitemap"><?php esc_html_e( 'Sitemap URL override', 'rodolfo' ); ?></label>
+                            <input type="url" id="rodolfo_link_sitemap" name="rodolfo_link_sitemap"
+                                   value="<?php echo esc_attr( get_option( 'rodolfo_link_sitemap' ) ); ?>"
+                                   class="regular-text" placeholder="<?php echo esc_attr( home_url( '/wp-sitemap.xml' ) ); ?>" />
+                            <p class="description"><?php esc_html_e( 'Leave blank to use the WordPress core XML sitemap automatically. Set this if an SEO plugin provides the sitemap (e.g. /sitemap_index.xml).', 'rodolfo' ); ?></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Site setup', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Create the utility pages the theme references (FAQ, Terms, Privacy, Accessibility) and add starter content to any that exist but are still empty. Safe to run anytime — pages that already have content are never touched, and nothing is ever deleted.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <table class="rodolfo-sysinfo" style="margin-bottom:14px">
+                            <?php foreach ( rodolfo_setup_status() as $item ) : ?>
+                                <tr>
+                                    <td><?php echo esc_html( $item['title'] ); ?></td>
+                                    <?php if ( ! $item['exists'] ) : ?>
+                                        <td class="warn"><?php esc_html_e( 'Missing', 'rodolfo' ); ?></td>
+                                    <?php elseif ( ! empty( $item['empty'] ) ) : ?>
+                                        <td class="warn">
+                                            <?php esc_html_e( 'Present but empty', 'rodolfo' ); ?>
+                                            <?php if ( $item['id'] ) : ?>
+                                                — <a href="<?php echo esc_url( get_edit_post_link( $item['id'] ) ); ?>"><?php esc_html_e( 'add content', 'rodolfo' ); ?></a>
+                                            <?php endif; ?>
+                                        </td>
+                                    <?php else : ?>
+                                        <td class="ok"><?php esc_html_e( 'Present', 'rodolfo' ); ?></td>
+                                    <?php endif; ?>
+                                </tr>
+                            <?php endforeach; ?>
+                        </table>
+                        <button type="submit" form="rodolfo-setup-form" class="button">
+                            <?php esc_html_e( 'Create missing pages & fill empty ones', 'rodolfo' ); ?>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Maintenance mode', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Show a holding page to visitors while you work. Logged-in admins always see the live site.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_maintenance_mode"><?php esc_html_e( 'Mode', 'rodolfo' ); ?></label>
+                            <select id="rodolfo_maintenance_mode" name="rodolfo_maintenance_mode" style="max-width:240px">
+                                <option value="" <?php selected( get_option( 'rodolfo_maintenance_mode' ), '' ); ?>><?php esc_html_e( 'Disabled', 'rodolfo' ); ?></option>
+                                <option value="maintenance" <?php selected( get_option( 'rodolfo_maintenance_mode' ), 'maintenance' ); ?>><?php esc_html_e( 'Maintenance (503)', 'rodolfo' ); ?></option>
+                                <option value="coming_soon" <?php selected( get_option( 'rodolfo_maintenance_mode' ), 'coming_soon' ); ?>><?php esc_html_e( 'Coming soon (200)', 'rodolfo' ); ?></option>
+                            </select>
+                            <p class="description"><?php esc_html_e( 'Maintenance returns a 503 status (tells search engines to return later). Coming soon returns 200 (allows indexing).', 'rodolfo' ); ?></p>
+                        </div>
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_maintenance_title"><?php esc_html_e( 'Headline (optional)', 'rodolfo' ); ?></label>
+                            <input type="text" id="rodolfo_maintenance_title" name="rodolfo_maintenance_title"
+                                   value="<?php echo esc_attr( get_option( 'rodolfo_maintenance_title' ) ); ?>"
+                                   class="regular-text" placeholder="<?php esc_attr_e( 'The fish are swimming away', 'rodolfo' ); ?>" />
+                            <p class="description"><?php esc_html_e( 'Leave blank to use the default. Keep it light, but make sure visitors can tell the site is coming back.', 'rodolfo' ); ?></p>
+                        </div>
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_maintenance_body"><?php esc_html_e( 'Message (optional)', 'rodolfo' ); ?></label>
+                            <textarea id="rodolfo_maintenance_body" name="rodolfo_maintenance_body" rows="3" class="large-text"
+                                      placeholder="<?php esc_attr_e( 'We are doing some quick maintenance and will be back shortly.', 'rodolfo' ); ?>"><?php echo esc_textarea( get_option( 'rodolfo_maintenance_body' ) ); ?></textarea>
+                            <p class="description"><?php esc_html_e( 'Shown under the headline. The holding page uses your site logo when one is set, and follows the visitor\'s light or dark mode.', 'rodolfo' ); ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NAVIGATION TAB -->
+            <div class="rodolfo-panel<?php echo 'navigation' === $active_tab ? ' is-active' : ''; ?>" data-panel="navigation">
+                <?php
+                $rodolfo_menu_overrides = array();
+                if ( has_nav_menu( 'primary' ) ) {
+                    $rodolfo_menu_overrides[] = __( 'header menu', 'rodolfo' );
+                }
+                if ( has_nav_menu( 'secondary' ) ) {
+                    $rodolfo_menu_overrides[] = __( 'footer row', 'rodolfo' );
+                }
+                if ( $rodolfo_menu_overrides ) :
+                    ?>
+                    <div class="rodolfo-callout rodolfo-callout-warn">
+                        <p>
+                            <strong><?php esc_html_e( 'These settings are currently being overridden.', 'rodolfo' ); ?></strong>
+                            <?php
+                            printf(
+                                /* translators: %s: list of affected nav areas, e.g. "header menu, footer row" */
+                                esc_html__( 'A WordPress menu is assigned to your %s, and an assigned menu always takes priority over the per-page settings below. Until you unassign it, changes here will not appear on the site.', 'rodolfo' ),
+                                esc_html( implode( __( ', ', 'rodolfo' ), $rodolfo_menu_overrides ) )
+                            );
+                            ?>
+                        </p>
+                        <p>
+                            <a href="<?php echo esc_url( admin_url( 'nav-menus.php?action=locations' ) ); ?>">
+                                <?php esc_html_e( 'Manage menu locations →', 'rodolfo' ); ?>
+                            </a>
+                        </p>
+                    </div>
+                <?php endif; ?>
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Navigation', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Decide where each top-level Page appears — the header menu, the footer row, or nowhere — and set the order (lower numbers come first). Below, choose which built-in links show in the footer and where they sit in the same order.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <?php
+                        $rodolfo_nav_pages = rodolfo_nav_pages();
+                        if ( empty( $rodolfo_nav_pages ) ) :
+                            ?>
+                            <p class="description"><?php esc_html_e( 'No published top-level pages yet. Create a Page (e.g. About) and it will appear in the header menu automatically.', 'rodolfo' ); ?></p>
+                        <?php else : ?>
+                            <table class="rodolfo-navtable">
+                                <thead>
+                                    <tr>
+                                        <th><?php esc_html_e( 'Page', 'rodolfo' ); ?></th>
+                                        <th><?php esc_html_e( 'Location', 'rodolfo' ); ?></th>
+                                        <th class="rodolfo-navtable-order"><?php esc_html_e( 'Order', 'rodolfo' ); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ( $rodolfo_nav_pages as $rodolfo_page ) :
+                                        $rodolfo_pid = (int) $rodolfo_page->ID;
+                                        $rodolfo_loc = rodolfo_nav_location( $rodolfo_pid );
+                                        $rodolfo_ord = rodolfo_nav_order_val( $rodolfo_page );
+                                        ?>
+                                        <tr>
+                                            <td class="rodolfo-navtable-title"><?php echo esc_html( get_the_title( $rodolfo_pid ) ); ?></td>
+                                            <td>
+                                                <select name="rodolfo_nav_locations[<?php echo esc_attr( $rodolfo_pid ); ?>]">
+                                                    <option value="header" <?php selected( 'header', $rodolfo_loc ); ?>><?php esc_html_e( 'Header menu', 'rodolfo' ); ?></option>
+                                                    <option value="footer" <?php selected( 'footer', $rodolfo_loc ); ?>><?php esc_html_e( 'Footer links', 'rodolfo' ); ?></option>
+                                                    <option value="hidden" <?php selected( 'hidden', $rodolfo_loc ); ?>><?php esc_html_e( 'Hidden', 'rodolfo' ); ?></option>
+                                                </select>
+                                            </td>
+                                            <td class="rodolfo-navtable-order">
+                                                <input type="number" name="rodolfo_nav_order[<?php echo esc_attr( $rodolfo_pid ); ?>]"
+                                                       value="<?php echo esc_attr( $rodolfo_ord ); ?>" class="small-text" />
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+
+                            <?php $rodolfo_util = rodolfo_footer_util_config(); ?>
+                            <h4 class="rodolfo-navtable-sub"><?php esc_html_e( 'Built-in footer links', 'rodolfo' ); ?></h4>
+                            <table class="rodolfo-navtable">
+                                <thead>
+                                    <tr>
+                                        <th><?php esc_html_e( 'Link', 'rodolfo' ); ?></th>
+                                        <th><?php esc_html_e( 'Show', 'rodolfo' ); ?></th>
+                                        <th><?php esc_html_e( 'Label', 'rodolfo' ); ?></th>
+                                        <th class="rodolfo-navtable-order"><?php esc_html_e( 'Order', 'rodolfo' ); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ( $rodolfo_util as $rodolfo_uk => $rodolfo_ucfg ) : ?>
+                                        <tr>
+                                            <td class="rodolfo-navtable-title"><?php echo esc_html( rodolfo_footer_util_default_label( $rodolfo_uk ) ); ?></td>
+                                            <td>
+                                                <input type="hidden" name="rodolfo_footer_util[<?php echo esc_attr( $rodolfo_uk ); ?>][show]" value="0" />
+                                                <input type="checkbox" name="rodolfo_footer_util[<?php echo esc_attr( $rodolfo_uk ); ?>][show]" value="1" <?php checked( $rodolfo_ucfg['show'] ); ?> />
+                                            </td>
+                                            <td>
+                                                <input type="text" name="rodolfo_footer_util[<?php echo esc_attr( $rodolfo_uk ); ?>][label]"
+                                                       value="<?php echo esc_attr( $rodolfo_ucfg['label'] ); ?>"
+                                                       placeholder="<?php echo esc_attr( rodolfo_footer_util_default_label( $rodolfo_uk ) ); ?>" class="regular-text" />
+                                            </td>
+                                            <td class="rodolfo-navtable-order">
+                                                <input type="number" name="rodolfo_footer_util[<?php echo esc_attr( $rodolfo_uk ); ?>][order]"
+                                                       value="<?php echo esc_attr( $rodolfo_ucfg['order'] ); ?>" class="small-text" />
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                            <p class="description"><?php esc_html_e( 'Footer links (footer-assigned Pages plus the built-in links above) are shown in ascending order value. Untick any you don\'t need, rename them in the Label field, or reorder them. A built-in link is skipped automatically if its destination doesn\'t exist (e.g. no FAQ or Terms page). FAQ links to a page with slug "faq"; Terms of Use to "terms"; Privacy Policy to Settings → Privacy; Sitemap to the URL below or WordPress\'s built-in sitemap.', 'rodolfo' ); ?></p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTENT TAB -->
+            <div class="rodolfo-panel<?php echo 'content' === $active_tab ? ' is-active' : ''; ?>" data-panel="content">
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Reading bar', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'A scroll progress bar shown on posts and pages.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-toggle-row">
+                            <input type="checkbox" id="rodolfo_progress_enabled" name="rodolfo_progress_enabled" value="1" <?php checked( '1', get_option( 'rodolfo_progress_enabled', '1' ) ); ?> />
+                            <label for="rodolfo_progress_enabled"><?php esc_html_e( 'Show the reading progress bar on posts and pages', 'rodolfo' ); ?></label>
+                        </div>
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_progress_height"><?php esc_html_e( 'Bar height (px)', 'rodolfo' ); ?></label>
+                            <input type="number" min="2" max="20" id="rodolfo_progress_height" name="rodolfo_progress_height"
+                                   value="<?php echo esc_attr( get_option( 'rodolfo_progress_height', 4 ) ); ?>" class="small-text" />
+                            <p class="description"><?php esc_html_e( 'Between 2 and 20 pixels. Values below 2 fall back to 4 so the bar stays visible.', 'rodolfo' ); ?></p>
+                        </div>
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_progress_position"><?php esc_html_e( 'Bar position', 'rodolfo' ); ?></label>
+                            <select id="rodolfo_progress_position" name="rodolfo_progress_position">
+                                <option value="top" <?php selected( 'top', get_option( 'rodolfo_progress_position', 'top' ) ); ?>><?php esc_html_e( 'Top of the screen', 'rodolfo' ); ?></option>
+                                <option value="bottom" <?php selected( 'bottom', get_option( 'rodolfo_progress_position', 'top' ) ); ?>><?php esc_html_e( 'Bottom of the screen', 'rodolfo' ); ?></option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Donate button', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Enter your PayPal email (or a custom URL) and the theme builds the donation link for you. Choose where the button appears below — automatically after your content, or place it manually with the [donate] shortcode. Payment processing happens securely on PayPal.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_donate_auto"><?php esc_html_e( 'Automatic placement', 'rodolfo' ); ?></label>
+                            <select id="rodolfo_donate_auto" name="rodolfo_donate_auto" style="max-width:280px">
+                                <option value="" <?php selected( get_option( 'rodolfo_donate_auto', '' ), '' ); ?>><?php esc_html_e( 'Off — use the [donate] shortcode only', 'rodolfo' ); ?></option>
+                                <option value="posts" <?php selected( get_option( 'rodolfo_donate_auto', '' ), 'posts' ); ?>><?php esc_html_e( 'After every post', 'rodolfo' ); ?></option>
+                                <option value="posts_pages" <?php selected( get_option( 'rodolfo_donate_auto', '' ), 'posts_pages' ); ?>><?php esc_html_e( 'After every post and page', 'rodolfo' ); ?></option>
+                            </select>
+                            <p class="description"><?php esc_html_e( 'When set, the Donate button is appended to the end of the content automatically — no shortcode or block needed. Requires a PayPal email or custom URL below. The [donate] shortcode keeps working regardless.', 'rodolfo' ); ?></p>
+                        </div>
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_paypal_email"><?php esc_html_e( 'PayPal email', 'rodolfo' ); ?></label>
+                            <input type="email" id="rodolfo_paypal_email" name="rodolfo_paypal_email"
+                                   value="<?php echo esc_attr( get_option( 'rodolfo_paypal_email' ) ); ?>"
+                                   class="regular-text" placeholder="you@example.com" />
+                            <p class="description"><?php esc_html_e( 'Enter your PayPal account email and the [donate] button will link to your PayPal donation page automatically.', 'rodolfo' ); ?></p>
+                        </div>
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_donate_currency"><?php esc_html_e( 'Currency', 'rodolfo' ); ?></label>
+                            <input type="text" id="rodolfo_donate_currency" name="rodolfo_donate_currency" maxlength="3"
+                                   value="<?php echo esc_attr( get_option( 'rodolfo_donate_currency', 'USD' ) ); ?>"
+                                   class="small-text" placeholder="USD" />
+                            <p class="description"><?php esc_html_e( '3-letter code for the PayPal donation (e.g. USD, EUR, GBP, SGD).', 'rodolfo' ); ?></p>
+                        </div>
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_donate_url"><?php esc_html_e( 'Custom donate URL (optional override)', 'rodolfo' ); ?></label>
+                            <input type="url" id="rodolfo_donate_url" name="rodolfo_donate_url"
+                                   value="<?php echo esc_attr( get_option( 'rodolfo_donate_url' ) ); ?>"
+                                   class="regular-text" placeholder="https://www.paypal.me/yoursite" />
+                            <p class="description"><?php esc_html_e( 'Leave blank to use the PayPal email above. Set this to use a different link instead (PayPal.me, a Stripe payment link, or your own donation page).', 'rodolfo' ); ?></p>
+                        </div>
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_donate_label"><?php esc_html_e( 'Donate button label', 'rodolfo' ); ?></label>
+                            <input type="text" id="rodolfo_donate_label" name="rodolfo_donate_label"
+                                   value="<?php echo esc_attr( get_option( 'rodolfo_donate_label' ) ); ?>"
+                                   class="regular-text" placeholder="<?php esc_attr_e( 'Donate', 'rodolfo' ); ?>" />
+                        </div>
+                    </div>
+                </div>
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Reading extras', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Small additions to the reading experience. Each is independent and off unless you switch it on.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-toggle-row">
+                            <input type="checkbox" id="rodolfo_reading_time_enabled" name="rodolfo_reading_time_enabled" value="1" <?php checked( '1', get_option( 'rodolfo_reading_time_enabled', '1' ) ); ?> />
+                            <label for="rodolfo_reading_time_enabled"><?php esc_html_e( 'Show estimated reading time on posts', 'rodolfo' ); ?></label>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'On by default, as the theme has always shown this. Calculated from word count (about 220 words a minute), with code blocks weighted more slowly. Nothing is stored.', 'rodolfo' ); ?></p>
+
+                        <div class="rodolfo-toggle-row" style="margin-top:14px">
+                            <input type="checkbox" id="rodolfo_series_enabled" name="rodolfo_series_enabled" value="1" <?php checked( '1', get_option( 'rodolfo_series_enabled' ) ); ?> />
+                            <label for="rodolfo_series_enabled"><?php esc_html_e( 'Show series navigation on posts', 'rodolfo' ); ?></label>
+                        </div>
+                        <p class="description">
+                            <?php
+                            printf(
+                                /* translators: %s: link to the Series taxonomy screen */
+                                esc_html__( 'For multi-part guides. Assign posts to a series under %s, then order them with the page-attributes order field. A "Part 2 of 5" box with previous/next links appears on each post.', 'rodolfo' ),
+                                '<a href="' . esc_url( admin_url( 'edit-tags.php?taxonomy=rodolfo_series&post_type=post' ) ) . '">' . esc_html__( 'Posts → Series', 'rodolfo' ) . '</a>'
+                            );
+                            ?>
+                        </p>
+
+                        <div class="rodolfo-toggle-row" style="margin-top:14px">
+                            <input type="checkbox" id="rodolfo_feed_full_content" name="rodolfo_feed_full_content" value="1" <?php checked( '1', get_option( 'rodolfo_feed_full_content' ) ); ?> />
+                            <label for="rodolfo_feed_full_content"><?php esc_html_e( 'Send full posts to RSS readers', 'rodolfo' ); ?></label>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'Overrides the excerpt setting in Settings → Reading for the theme\'s feeds. Subscribers get the whole post instead of a teaser.', 'rodolfo' ); ?></p>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Reader engagement', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Optional touches for returning readers and long posts. All off by default and self-hosted — no external service, no accounts.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-toggle-row">
+                            <input type="checkbox" id="rodolfo_views_enabled" name="rodolfo_views_enabled" value="1" <?php checked( '1', get_option( 'rodolfo_views_enabled' ) ); ?> />
+                            <label for="rodolfo_views_enabled"><?php esc_html_e( 'Count post views', 'rodolfo' ); ?></label>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'One integer per post, stored in post meta. Bots, logged-in editors and repeat visits within an hour do not count. Available to templates via rodolfo_views_get() and rodolfo_popular_posts().', 'rodolfo' ); ?></p>
+
+                        <div class="rodolfo-toggle-row" style="margin-top:14px">
+                            <input type="checkbox" id="rodolfo_views_show_meta" name="rodolfo_views_show_meta" value="1" <?php checked( '1', get_option( 'rodolfo_views_show_meta' ) ); ?> />
+                            <label for="rodolfo_views_show_meta"><?php esc_html_e( 'Show the view count in the post meta line', 'rodolfo' ); ?></label>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'Appears beside the date and reading time on single posts. Nothing to display until the counter above is on and has recorded some views.', 'rodolfo' ); ?></p>
+
+                        <div class="rodolfo-toggle-row" style="margin-top:14px">
+                            <input type="checkbox" id="rodolfo_resume_enabled" name="rodolfo_resume_enabled" value="1" <?php checked( '1', get_option( 'rodolfo_resume_enabled' ) ); ?> />
+                            <label for="rodolfo_resume_enabled"><?php esc_html_e( 'Remember where readers left off in a post', 'rodolfo' ); ?></label>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'A small "Resume where you left off" pill appears in the corner when a returning reader lands on a post they scrolled at least 15% through. Never scrolls automatically. Stored in the reader\'s own browser (localStorage) — no server, no tracking.', 'rodolfo' ); ?></p>
+
+                        <div class="rodolfo-toggle-row" style="margin-top:14px">
+                            <input type="checkbox" id="rodolfo_privacy_embeds" name="rodolfo_privacy_embeds" value="1" <?php checked( '1', get_option( 'rodolfo_privacy_embeds' ) ); ?> /> <label for="rodolfo_privacy_embeds"><?php esc_html_e( 'Consent-gate video and audio embeds', 'rodolfo' ); ?></label>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'YouTube, Vimeo, SoundCloud and Spotify embeds render as a click-to-load placeholder, so no third-party connection is made until the reader presses play. Faster pages, no tracking cookies on first visit. Readers can opt to always load a provider (remembered in their browser only).', 'rodolfo' ); ?></p>
+
+                        <div class="rodolfo-toggle-row" style="margin-top:14px">
+                            <input type="checkbox" id="rodolfo_comment_guard" name="rodolfo_comment_guard" value="1" <?php checked( '1', get_option( 'rodolfo_comment_guard' ) ); ?> /> <label for="rodolfo_comment_guard"><?php esc_html_e( 'Guard the comment form against bots', 'rodolfo' ); ?></label>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'A hidden honeypot field plus a minimum-time check — zero dependencies, invisible to readers, catches drive-by comment spam. Logged-in users and pingbacks are never checked.', 'rodolfo' ); ?></p>
+
+                        <div class="rodolfo-toggle-row" style="margin-top:14px">
+                            <input type="checkbox" id="rodolfo_sticky_title" name="rodolfo_sticky_title" value="1" <?php checked( '1', get_option( 'rodolfo_sticky_title' ) ); ?> /> <label for="rodolfo_sticky_title"><?php esc_html_e( 'Sticky post title on long reads', 'rodolfo' ); ?></label>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'A slim bar with the post title slides in under the site header once the reader scrolls past the headline. No effect on pages or archives; appears without animation for readers who prefer reduced motion.', 'rodolfo' ); ?></p>
+
+                        <div class="rodolfo-field-grid" style="margin-top:10px">
+                            <div><label for="rodolfo_turnstile_site"><?php esc_html_e( 'Cloudflare Turnstile site key (optional)', 'rodolfo' ); ?></label>
+                                <input type="text" id="rodolfo_turnstile_site" name="rodolfo_turnstile_site" value="<?php echo esc_attr( get_option( 'rodolfo_turnstile_site' ) ); ?>" autocomplete="off" /></div>
+                            <div><label for="rodolfo_turnstile_secret"><?php esc_html_e( 'Turnstile secret key', 'rodolfo' ); ?></label>
+                                <input type="password" id="rodolfo_turnstile_secret" name="rodolfo_turnstile_secret" value="<?php echo esc_attr( get_option( 'rodolfo_turnstile_secret' ) ); ?>" autocomplete="new-password" /></div>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'A second layer for sites under targeted spam. Leave empty to skip it entirely — with keys set, the Turnstile script loads only when a reader focuses the comment field, so clean page views never contact Cloudflare.', 'rodolfo' ); ?></p>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Excerpt length', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'One number does not fit both contexts. Card excerpts on the index and archives read best as a hook, while search results benefit from a longer teaser so a matching keyword actually appears in the snippet.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_excerpt_length_card"><?php esc_html_e( 'Cards (index and archives)', 'rodolfo' ); ?></label>
+                            <input type="number" min="5" max="200" step="1" id="rodolfo_excerpt_length_card" name="rodolfo_excerpt_length_card"
+                                   value="<?php echo esc_attr( (int) get_option( 'rodolfo_excerpt_length_card', 24 ) ); ?>" style="width:100px" />
+                            <span class="description"><?php esc_html_e( 'words. Default: 24.', 'rodolfo' ); ?></span>
+                        </div>
+                        <div class="rodolfo-field" style="margin-top:10px">
+                            <label for="rodolfo_excerpt_length_search"><?php esc_html_e( 'Search results', 'rodolfo' ); ?></label>
+                            <input type="number" min="5" max="200" step="1" id="rodolfo_excerpt_length_search" name="rodolfo_excerpt_length_search"
+                                   value="<?php echo esc_attr( (int) get_option( 'rodolfo_excerpt_length_search', 40 ) ); ?>" style="width:100px" />
+                            <span class="description"><?php esc_html_e( 'words. Default: 40.', 'rodolfo' ); ?></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Navigation & freshness', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Two small touches for readers who return often. Both are off by default.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-toggle-row">
+                            <input type="checkbox" id="rodolfo_keynav_enabled" name="rodolfo_keynav_enabled" value="1" <?php checked( '1', get_option( 'rodolfo_keynav_enabled' ) ); ?> />
+                            <label for="rodolfo_keynav_enabled"><?php esc_html_e( 'Number the header menu for keyboard access', 'rodolfo' ); ?></label>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'Pressing 1–9 jumps to the matching header link. Ignored while typing and when a modifier key is held, so browser shortcuts still work. Complements the existing ⌘K search palette.', 'rodolfo' ); ?></p>
+
+                        <div class="rodolfo-toggle-row" style="margin-top:14px">
+                            <input type="checkbox" id="rodolfo_site_updated_enabled" name="rodolfo_site_updated_enabled" value="1" <?php checked( '1', get_option( 'rodolfo_site_updated_enabled' ) ); ?> />
+                            <label for="rodolfo_site_updated_enabled"><?php esc_html_e( 'Show the latest post date in the footer', 'rodolfo' ); ?></label>
+                        </div>
+                        <div class="rodolfo-field" style="margin-top:10px">
+                            <label for="rodolfo_site_updated_mode"><?php esc_html_e( 'Which date', 'rodolfo' ); ?></label>
+                            <select id="rodolfo_site_updated_mode" name="rodolfo_site_updated_mode" style="max-width:320px">
+                                <option value="published" <?php selected( 'published', get_option( 'rodolfo_site_updated_mode', 'published' ) ); ?>><?php esc_html_e( 'Last post — when your newest post was published', 'rodolfo' ); ?></option>
+                                <option value="modified" <?php selected( 'modified', get_option( 'rodolfo_site_updated_mode', 'published' ) ); ?>><?php esc_html_e( 'Updated — when any post was last edited', 'rodolfo' ); ?></option>
+                            </select>
+                            <p class="description"><?php esc_html_e( '"Last post" is the honest freshness signal: editing a typo in an old article will not reset it. "Updated" reflects any edit, which suits sites that revise older posts as a matter of course. The label changes to match. Either way, both dates are published as schema on your homepage for search engines, whether or not this stamp is shown.', 'rodolfo' ); ?></p>
+                        </div>
+
+                        <p class="description" style="margin-top:14px">
+                            <?php esc_html_e( 'Pages can also be marked "coming soon" individually — look for the Coming soon box when editing any Page. The page stays in your menu and shows what is planned, instead of being hidden.', 'rodolfo' ); ?>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Social share cards', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'The preview image generated when a post is shared. Uses the post title and its category accent colour.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_card_variant"><?php esc_html_e( 'Card style', 'rodolfo' ); ?></label>
+                            <select id="rodolfo_card_variant" name="rodolfo_card_variant" style="max-width:240px">
+                                <option value="light" <?php selected( 'light', get_option( 'rodolfo_card_variant', 'light' ) ); ?>><?php esc_html_e( 'Light (default)', 'rodolfo' ); ?></option>
+                                <option value="dark" <?php selected( 'dark', get_option( 'rodolfo_card_variant', 'light' ) ); ?>><?php esc_html_e( 'Dark', 'rodolfo' ); ?></option>
+                            </select>
+                            <p class="description"><?php esc_html_e( 'Light matches the site\'s default appearance. Choose dark if it suits your branding better.', 'rodolfo' ); ?></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Sidebar', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'The theme is designed as a single centred column, which is what makes it comfortable to read. A sidebar is supported for sites that need widgets, but it works against that design — leave it off unless you have a specific reason.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-toggle-row">
+                            <input type="checkbox" id="rodolfo_sidebar_enabled" name="rodolfo_sidebar_enabled" value="1" <?php checked( '1', get_option( 'rodolfo_sidebar_enabled' ) ); ?> />
+                            <label for="rodolfo_sidebar_enabled"><?php esc_html_e( 'Enable the widget sidebar', 'rodolfo' ); ?></label>
+                        </div>
+                        <div class="rodolfo-field" style="margin-top:12px">
+                            <label for="rodolfo_sidebar_scope"><?php esc_html_e( 'Show it on', 'rodolfo' ); ?></label>
+                            <select id="rodolfo_sidebar_scope" name="rodolfo_sidebar_scope" style="max-width:280px">
+                                <option value="archives" <?php selected( 'archives', get_option( 'rodolfo_sidebar_scope', 'archives' ) ); ?>><?php esc_html_e( 'Blog index, archives and search', 'rodolfo' ); ?></option>
+                                <option value="posts" <?php selected( 'posts', get_option( 'rodolfo_sidebar_scope', 'archives' ) ); ?>><?php esc_html_e( 'Single posts only', 'rodolfo' ); ?></option>
+                                <option value="everywhere" <?php selected( 'everywhere', get_option( 'rodolfo_sidebar_scope', 'archives' ) ); ?>><?php esc_html_e( 'Everywhere', 'rodolfo' ); ?></option>
+                            </select>
+                            <p class="description">
+                                <?php
+                                printf(
+                                    /* translators: %s: link to the Widgets screen */
+                                    esc_html__( 'Add widgets under %s. If the sidebar is empty it stays hidden, so enabling this alone changes nothing.', 'rodolfo' ),
+                                    '<a href="' . esc_url( admin_url( 'widgets.php' ) ) . '">' . esc_html__( 'Appearance → Widgets', 'rodolfo' ) . '</a>'
+                                );
+                                ?>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOCIAL TAB -->
+            <div class="rodolfo-panel<?php echo 'social' === $active_tab ? ' is-active' : ''; ?>" data-panel="social">
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Social links', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'URLs entered here render as icon links in the site footer.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <?php foreach ( rodolfo_social_platforms() as $rodolfo_sk => $rodolfo_sp ) :
+                            $rodolfo_stype = isset( $rodolfo_sp[2] ) ? $rodolfo_sp[2] : 'url';
+                            ?>
+                            <div class="rodolfo-field">
+                                <label for="rodolfo_social_<?php echo esc_attr( $rodolfo_sk ); ?>"><?php echo esc_html( $rodolfo_sp[0] ); ?></label>
+                                <input type="<?php echo esc_attr( $rodolfo_stype ); ?>" id="rodolfo_social_<?php echo esc_attr( $rodolfo_sk ); ?>" name="rodolfo_social_<?php echo esc_attr( $rodolfo_sk ); ?>"
+                                       value="<?php echo esc_attr( get_option( 'rodolfo_social_' . $rodolfo_sk ) ); ?>"
+                                       class="regular-text" placeholder="<?php echo esc_attr( $rodolfo_sp[1] ); ?>" />
+                                <?php if ( 'email' === $rodolfo_stype ) : ?>
+                                    <p class="description"><?php esc_html_e( 'Enter the address only — the mailto: link is built for you.', 'rodolfo' ); ?></p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                        <div class="rodolfo-field">
+                            <label for="rodolfo_twitter_handle"><?php esc_html_e( 'X / Twitter handle for Click-to-Tweet', 'rodolfo' ); ?></label>
+                            <input type="text" id="rodolfo_twitter_handle" name="rodolfo_twitter_handle"
+                                   value="<?php echo esc_attr( get_option( 'rodolfo_twitter_handle' ) ); ?>"
+                                   class="regular-text" placeholder="username" />
+                            <p class="description"><?php esc_html_e( 'Without the @. Credited as “via @handle” in the [bctt] click-to-tweet block.', 'rodolfo' ); ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PERFORMANCE TAB -->
+            <div class="rodolfo-panel<?php echo 'performance' === $active_tab ? ' is-active' : ''; ?>" data-panel="performance">
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Disable emojis', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Removes the WordPress emoji script and DNS prefetch. Safe to enable if you use plain-text or HTML emojis instead.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-toggle-row">
+                            <input type="checkbox" id="rodolfo_disable_emojis" name="rodolfo_disable_emojis" value="1"
+                                   <?php checked( get_option( 'rodolfo_disable_emojis' ), '1' ); ?> />
+                            <div class="rodolfo-toggle-info">
+                                <label for="rodolfo_disable_emojis"><?php esc_html_e( 'Disable emoji scripts', 'rodolfo' ); ?></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Disable embeds', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Removes the oEmbed script that powers WordPress auto-embeds. Enable if you paste embed codes manually and do not use the auto-embed feature.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-toggle-row">
+                            <input type="checkbox" id="rodolfo_disable_embeds" name="rodolfo_disable_embeds" value="1"
+                                   <?php checked( get_option( 'rodolfo_disable_embeds' ), '1' ); ?> />
+                            <div class="rodolfo-toggle-info">
+                                <label for="rodolfo_disable_embeds"><?php esc_html_e( 'Disable oEmbed scripts', 'rodolfo' ); ?></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Disable jQuery Migrate', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Removes the jQuery Migrate compatibility script. Safe if all your plugins and the theme do not use deprecated jQuery APIs.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-toggle-row">
+                            <input type="checkbox" id="rodolfo_disable_jquery_migrate" name="rodolfo_disable_jquery_migrate" value="1"
+                                   <?php checked( get_option( 'rodolfo_disable_jquery_migrate' ), '1' ); ?> />
+                            <div class="rodolfo-toggle-info">
+                                <label for="rodolfo_disable_jquery_migrate"><?php esc_html_e( 'Disable jQuery Migrate', 'rodolfo' ); ?></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCRIPTS TAB -->
+            <div class="rodolfo-panel<?php echo 'features' === $active_tab ? ' is-active' : ''; ?>" data-panel="features">
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-head">
+                        <h2><?php esc_html_e( 'Feature modules', 'rodolfo' ); ?></h2>
+                        <p><?php esc_html_e( 'Switch off what this site does not use — a disabled module is never loaded at all, so it costs nothing. Structural modules cannot be disabled. Content written with a disabled feature degrades politely: shortcodes render as plain text, virtual routes 404.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-body">
+                        <?php foreach ( rodolfo_optional_modules() as $rodolfo_slug => $rodolfo_label ) : ?>
+                        <div class="rodolfo-toggle-row" style="margin-top:8px">
+                            <?php // Inverted storage: the option is rodolfo_disable_<slug>, so an unsaved install has everything ON. The hidden input submits '1' (disable) unless the checkbox — value '' — overrides it. ?>
+                            <input type="hidden" name="rodolfo_disable_<?php echo esc_attr( $rodolfo_slug ); ?>" value="1" />
+                            <input type="checkbox" id="rodolfo_disable_<?php echo esc_attr( $rodolfo_slug ); ?>" name="rodolfo_disable_<?php echo esc_attr( $rodolfo_slug ); ?>" value="" <?php checked( ! get_option( 'rodolfo_disable_' . $rodolfo_slug ) ); ?> /> <label for="rodolfo_disable_<?php echo esc_attr( $rodolfo_slug ); ?>"><?php echo esc_html( $rodolfo_label ); ?></label>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rodolfo-panel<?php echo 'scripts' === $active_tab ? ' is-active' : ''; ?>" data-panel="scripts">
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Header scripts', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Output immediately before the closing </head> tag on every page. Wrap code in <script> tags.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-field">
+                            <textarea id="rodolfo_header_scripts" name="rodolfo_header_scripts"
+                                      rows="6" class="large-text code"
+                                      placeholder="<!-- e.g. analytics, tag managers -->"><?php echo esc_textarea( get_option( 'rodolfo_header_scripts' ) ); ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Body scripts', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Output immediately after the opening <body> tag on every page. Useful for GTM noscript snippets.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-field">
+                            <textarea id="rodolfo_body_scripts" name="rodolfo_body_scripts"
+                                      rows="6" class="large-text code"
+                                      placeholder="<!-- e.g. GTM noscript iframe -->"><?php echo esc_textarea( get_option( 'rodolfo_body_scripts' ) ); ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'Footer scripts', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Output immediately before the closing </body> tag on every page.', 'rodolfo' ); ?></p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <div class="rodolfo-field">
+                            <textarea id="rodolfo_footer_scripts" name="rodolfo_footer_scripts"
+                                      rows="6" class="large-text code"
+                                      placeholder="<!-- e.g. chat widgets, deferred analytics -->"><?php echo esc_textarea( get_option( 'rodolfo_footer_scripts' ) ); ?></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SYSTEM INFO TAB (no form fields — read only) -->
+            <div class="rodolfo-panel<?php echo 'system' === $active_tab ? ' is-active' : ''; ?>" data-panel="system">
+                <div class="rodolfo-section">
+                    <div class="rodolfo-section-label">
+                        <h3><?php esc_html_e( 'System status', 'rodolfo' ); ?></h3>
+                        <p><?php esc_html_e( 'Diagnostics for troubleshooting the theme: whether each feature has what it needs to run, and which settings are affecting the site. Download the JSON when reporting an issue.', 'rodolfo' ); ?></p>
+                        <p><?php
+                            printf(
+                                /* translators: %s: link to Site Health */
+                                esc_html__( 'For general environment checks (server, database, plugin conflicts) use %s.', 'rodolfo' ),
+                                '<a href="' . esc_url( admin_url( 'site-health.php' ) ) . '">' . esc_html__( 'Tools → Site Health', 'rodolfo' ) . '</a>'
+                            );
+                        ?></p>
+                        <p>
+                            <a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=rodolfo_system_report' ), 'rodolfo_system_report' ) ); ?>">
+                                <?php esc_html_e( 'Download system report (JSON)', 'rodolfo' ); ?>
+                            </a>
+                        </p>
+                    </div>
+                    <div class="rodolfo-section-control">
+                        <table class="rodolfo-sysinfo">
+                            <?php foreach ( rodolfo_system_report() as $rodolfo_sec ) : ?>
+                                <tr class="rodolfo-sysinfo-group"><td colspan="2"><?php echo esc_html( $rodolfo_sec['label'] ); ?></td></tr>
+                                <?php foreach ( $rodolfo_sec['rows'] as $rodolfo_h => $rodolfo_v ) : ?>
+                                    <tr>
+                                        <td><?php echo esc_html( $rodolfo_h ); ?></td>
+                                        <td><?php echo nl2br( esc_html( $rodolfo_v ) ); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCUMENTATION TAB -->
+            <div class="rodolfo-panel<?php echo 'docs' === $active_tab ? ' is-active' : ''; ?>" data-panel="docs">
+                <?php
+                $rodolfo_docs     = rodolfo_docs_files();
+                $rodolfo_doc_keys = array_keys( $rodolfo_docs );
+                $rodolfo_doc      = isset( $_GET['doc'] ) ? sanitize_key( wp_unslash( $_GET['doc'] ) ) : '';
+                if ( ! in_array( $rodolfo_doc, $rodolfo_doc_keys, true ) ) {
+                    $rodolfo_doc = reset( $rodolfo_doc_keys );
+                }
+                ?>
+                <div class="rodolfo-docs">
+                    <nav class="rodolfo-docs-nav" aria-label="<?php esc_attr_e( 'Documentation', 'rodolfo' ); ?>">
+                        <?php foreach ( $rodolfo_docs as $rodolfo_key => $rodolfo_meta ) : ?>
+                            <a class="rodolfo-docs-link<?php echo $rodolfo_key === $rodolfo_doc ? ' is-active' : ''; ?>"
+                               href="<?php echo esc_url( add_query_arg(
+                                   array( 'page' => 'rodolfo-theme-options', 'tab' => 'docs', 'doc' => $rodolfo_key ),
+                                   admin_url( 'themes.php' )
+                               ) ); ?>">
+                                <?php echo esc_html( $rodolfo_meta['label'] ); ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </nav>
+                    <div class="rodolfo-docs-body">
+                        <?php
+                        // Already escaped and wp_kses()'d inside the renderer.
+                        echo rodolfo_docs_render( $rodolfo_doc ); // phpcs:ignore WordPress.Security.EscapeOutput
+                        ?>
+                    </div>
+                </div>
+                <p class="description" style="margin-top:16px">
+                    <?php
+                    $rodolfo_doc_path = rodolfo_docs_path( $rodolfo_doc );
+                    printf(
+                        /* translators: %s: relative path to the Markdown source file */
+                        esc_html__( 'Rendered live from %s in the theme folder. Edit that file and this page updates.', 'rodolfo' ),
+                        '<code>' . esc_html( $rodolfo_doc_path ? str_replace( wp_normalize_path( trailingslashit( get_template_directory() ) ), '', wp_normalize_path( $rodolfo_doc_path ) ) : '—' ) . '</code>'
+                    );
+                    ?>
+                </p>
+            </div>
+
+            <div class="rodolfo-form-footer"<?php echo 'docs' === $active_tab ? ' style="display:none"' : ''; ?>>
+                <div class="button-group">
+                    <?php submit_button( __( 'Save Settings', 'rodolfo' ), 'primary', 'submit', false ); ?>
+                    <button type="submit" form="rodolfo-reset-form" class="button"
+                            onclick="return confirm('<?php echo esc_js( __( 'Reset all settings to defaults? This cannot be undone.', 'rodolfo' ) ); ?>')">
+                        <?php esc_html_e( 'Reset Settings', 'rodolfo' ); ?>
+                    </button>
+                </div>
+            </div>
+
+        </form>
+
+        <?php
+        // The reset form lives OUTSIDE the settings form — nested forms are
+        // invalid HTML and browsers drop the inner tag, which made the Reset
+        // button submit the settings form instead. The button above targets
+        // this form via its HTML5 form attribute.
+        ?>
+        <form id="rodolfo-reset-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+            <?php wp_nonce_field( 'rodolfo_reset_settings' ); ?>
+            <input type="hidden" name="action" value="rodolfo_reset_settings" />
+            <input type="hidden" name="rodolfo_active_tab" value="<?php echo esc_attr( $active_tab ); ?>" />
+        </form>
+
+        <?php // Setup runner — also outside the settings form (see note above). ?>
+        <form id="rodolfo-setup-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+            <?php wp_nonce_field( 'rodolfo_run_setup' ); ?>
+            <input type="hidden" name="action" value="rodolfo_run_setup" />
+        </form>
+    </div>
+    <?php
+}
