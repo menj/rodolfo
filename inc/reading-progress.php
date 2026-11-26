@@ -3,9 +3,9 @@
  * Reading progress bar (natively, no plugin).
  *
  * A thin fixed bar that fills as the reader scrolls through a post/page.
- * Self-contained: prints its own scoped CSS + a few lines of vanilla JS in the
- * footer (no dependency on main.js or its .min twin). Options-driven via Theme
- * Options → Reading bar.
+ * Self-contained: prints its own markup in the footer and enqueues
+ * assets/js/reading.js (shared with the sticky title strip below), with no
+ * dependency on main.js. Options-driven via Theme Options → Reading bar.
  *
  * Options:
  *   rodolfo_progress_enabled  '1'|''            (default on)
@@ -18,6 +18,30 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
+/** Is the sticky title strip on for the current view? Singular posts only. */
+function rodolfo_sticky_title_active() {
+    return get_option( 'rodolfo_sticky_title' ) && is_singular( 'post' );
+}
+
+/**
+ * Enqueue the reading-aids script as a FILE (not an inline <script>), so it
+ * passes a strict script-src CSP and is cached between page views. Loaded
+ * only where the progress bar or the sticky title strip renders.
+ */
+function rodolfo_reading_assets() {
+    if ( ! rodolfo_progress_active() && ! rodolfo_sticky_title_active() ) {
+        return;
+    }
+    wp_enqueue_script(
+        rodolfo_handle( 'reading' ),
+        get_template_directory_uri() . '/assets/js/reading' . RODOLFO_ASSET_SUFFIX . '.js',
+        array(),
+        RODOLFO_VERSION,
+        array( 'in_footer' => true, 'strategy' => 'defer' )
+    );
+}
+add_action( 'wp_enqueue_scripts', 'rodolfo_reading_assets' );
 
 /** Should the bar render on the current view? Singular posts/pages only. */
 function rodolfo_progress_active() {
@@ -39,21 +63,6 @@ function rodolfo_progress_render() {
          style="position:fixed;<?php echo esc_attr( $position ); ?>:0;left:0;width:100%;height:<?php echo (int) $height; ?>px;z-index:60;background:transparent;pointer-events:none">
         <span id="tk-progress-fill" style="display:block;height:100%;width:0;background:<?php echo esc_attr( $accent ); ?>;transition:width .1s linear"></span>
     </div>
-    <script>
-    (function () {
-        var fill = document.getElementById('tk-progress-fill');
-        if (!fill) { return; }
-        function update() {
-            var h = document.documentElement;
-            var max = (h.scrollHeight - h.clientHeight);
-            var pct = max > 0 ? (h.scrollTop || document.body.scrollTop) / max * 100 : 0;
-            fill.style.width = Math.min(100, Math.max(0, pct)) + '%';
-        }
-        window.addEventListener('scroll', update, { passive: true });
-        window.addEventListener('resize', update, { passive: true });
-        update();
-    })();
-    </script>
     <?php
 }
 add_action( 'wp_footer', 'rodolfo_progress_render' );
@@ -69,25 +78,13 @@ add_action( 'wp_footer', 'rodolfo_progress_render' );
  * pill: title context up top, position memory below.
  */
 function rodolfo_sticky_title_render() {
-    if ( ! get_option( 'rodolfo_sticky_title' ) || ! is_singular( 'post' ) ) {
+    if ( ! rodolfo_sticky_title_active() ) {
         return;
     }
     ?>
     <div id="tk-sticky-title" class="tk-sticky-title" aria-hidden="true">
         <span class="tk-sticky-title-text"><?php echo esc_html( get_the_title() ); ?></span>
     </div>
-    <script>
-    (function () {
-        var strip = document.getElementById('tk-sticky-title');
-        var title = document.querySelector('article h1');
-        if (!strip || !title || typeof IntersectionObserver === 'undefined') { return; }
-        var header = document.querySelector('header.sticky');
-        strip.style.top = (header ? header.getBoundingClientRect().height : 0) + 'px';
-        new IntersectionObserver(function (entries) {
-            strip.classList.toggle('is-visible', !entries[0].isIntersecting && entries[0].boundingClientRect.top < 0);
-        }).observe(title);
-    })();
-    </script>
     <?php
 }
 add_action( 'wp_footer', 'rodolfo_sticky_title_render' );

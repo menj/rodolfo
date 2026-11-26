@@ -101,17 +101,29 @@ function rodolfo_ps_after_post( $content ) {
 add_filter( 'the_content', 'rodolfo_ps_after_post', 30 );
 
 /**
- * Google's script, printed in the footer only when a button was rendered, plus a
- * tiny observer that keeps the button's data-theme in step with the site's
- * light/dark mode (the theme toggles the "dark" class on <html>).
+ * Google's script plus assets/js/preferred-source.js (keeps the button's
+ * data-theme in step with the site's light/dark mode), enqueued as files only
+ * when a button was rendered. Every placement prints before wp_footer(), so
+ * by priority 5 the flag is settled, and scripts enqueued before
+ * wp_print_footer_scripts (priority 20) still print in the footer.
  */
 function rodolfo_ps_script() {
     if ( ! rodolfo_ps_button_printed() ) {
         return;
     }
-    ?>
-<script>(function(){var d=document.documentElement;function s(){var t=d.classList.contains('dark')?'dark':'light';document.querySelectorAll('[google-add-preferred-source-btn]').forEach(function(e){e.setAttribute('data-theme',t)})}s();new MutationObserver(s).observe(d,{attributes:true,attributeFilter:['class']})})();</script>
-<script async src="https://news.google.com/swg/js/v1/publisher.js"></script>
-    <?php
+    wp_enqueue_script(
+        rodolfo_handle( 'preferred-source' ),
+        get_template_directory_uri() . '/assets/js/preferred-source' . RODOLFO_ASSET_SUFFIX . '.js',
+        array(),
+        RODOLFO_VERSION,
+        array( 'in_footer' => true )
+    );
+    wp_enqueue_script(
+        rodolfo_handle( 'google-publisher' ),
+        'https://news.google.com/swg/js/v1/publisher.js',
+        array(),
+        null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- third-party URL, a ?ver would only bust Google's cache.
+        array( 'in_footer' => true, 'strategy' => 'async' )
+    );
 }
-add_action( 'wp_footer', 'rodolfo_ps_script', 20 );
+add_action( 'wp_footer', 'rodolfo_ps_script', 5 );

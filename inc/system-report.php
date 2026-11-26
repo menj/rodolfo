@@ -54,9 +54,7 @@ function rodolfo_system_report() {
         __( 'PHP Version', 'rodolfo' )       => PHP_VERSION,
         // The theme's own CSS/JS are versioned off this; a stale cache is a
         // common "my change did not appear" cause.
-        __( 'Asset Cache Key', 'rodolfo' )   => defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG
-            ? __( 'SCRIPT_DEBUG on — serving unminified sources', 'rodolfo' )
-            : __( 'Serving minified assets', 'rodolfo' ),
+        __( 'Asset Cache Key', 'rodolfo' )   => RODOLFO_VERSION . ' — ' . __( 'serving minified assets', 'rodolfo' ),
     );
 
     // --- Feature health: does each optional feature have what it needs? --
@@ -143,9 +141,7 @@ function rodolfo_system_report() {
         ? $warn . __( 'WP_DEBUG with on-screen display is enabled — fine locally, but on a live site notices leak into pages and feeds. Set WP_DEBUG_DISPLAY to false.', 'rodolfo' )
         : $ok . __( 'No debug output reaches visitors', 'rodolfo' );
 
-    $recommendations[ __( 'Asset minification', 'rodolfo' ) ] = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG )
-        ? $warn . __( 'SCRIPT_DEBUG is on — every asset is served unminified. Intended for development only.', 'rodolfo' )
-        : $ok . __( 'Serving minified assets', 'rodolfo' );
+    $recommendations[ __( 'Asset minification', 'rodolfo' ) ] = $ok . __( 'Serving minified assets', 'rodolfo' );
 
     $recommendations[ __( 'Comment pagination', 'rodolfo' ) ] = get_option( 'page_comments' )
         ? $ok . __( 'Comments break into pages', 'rodolfo' )

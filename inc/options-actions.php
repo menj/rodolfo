@@ -25,7 +25,7 @@ function rodolfo_admin_enqueue( $hook ) {
     // Tab switcher as an enqueued FILE, not an inline <script>: inline scripts
     // die under a strict CSP (common with security plugins in wp-admin), which
     // left the tabs unusable. Enqueued sources pass script-src by URL.
-    $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
+    $suffix = RODOLFO_ASSET_SUFFIX; // Only .min files ship; SCRIPT_DEBUG must not point at missing sources.
     wp_enqueue_script(
         'tk-admin',
         get_template_directory_uri() . '/assets/js/admin' . $suffix . '.js',

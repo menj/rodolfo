@@ -160,7 +160,7 @@ function rodolfo_unlist_admin_assets( $hook ) {
     if ( 'edit.php' !== $hook || 'post' !== get_current_screen()->post_type ) {
         return;
     }
-    $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
+    $suffix = RODOLFO_ASSET_SUFFIX; // Only .min files ship; SCRIPT_DEBUG must not point at missing sources.
     wp_enqueue_script(
         'tk-unlist-quick-edit',
         get_template_directory_uri() . '/assets/js/unlist-quick-edit' . $suffix . '.js',

@@ -119,7 +119,7 @@ function rodolfo_bctt_shortcode( $atts, $content = null ) {
  * implementation is active (plugin or theme) renders the block.
  */
 function rodolfo_bctt_register_block() {
-    $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
+    $suffix = RODOLFO_ASSET_SUFFIX; // Only .min files ship; SCRIPT_DEBUG must not point at missing sources.
     wp_register_script(
         'tk-bctt-block',
         get_template_directory_uri() . '/assets/js/bctt-block' . $suffix . '.js',
