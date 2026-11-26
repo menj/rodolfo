@@ -20,6 +20,8 @@ A fast, text-first blog theme: system fonts, no UI library, full Schema.org stru
 * Optional "Preferred source" button for Google Top Stories (Theme Options).
 * Guest authors: per-post custom bylines (one or several names), optional site-wide default, guest Person nodes in the schema graph.
 * End mark: a symbol or image after the last paragraph of each article, with per-post opt-out and an [end_mark] shortcode.
+* Footnotes: write ((a note)) in a post; numbered, linked notes with back-links appear under the article (per-post list style, merged identical notes, ((ref:N))).
+* Unlist: hide any post or page from listings, search, feeds, sitemaps, navigation and prev/next links while its direct URL keeps working (noindex). Publish-box checkbox, Quick Edit, Bulk Edit, list filter.
 * Layout switches (home layout, header layout, footer columns) for per-site variation.
 
 == Installation ==

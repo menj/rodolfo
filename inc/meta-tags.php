@@ -110,7 +110,7 @@ function rodolfo_meta_description() {
                 $desc = $post->post_excerpt;
             }
             if ( '' === trim( $desc ) ) {
-                $desc = wp_strip_all_tags( strip_shortcodes( $post->post_content ) );
+                $desc = wp_strip_all_tags( strip_shortcodes( function_exists( 'rodolfo_fn_strip' ) ? rodolfo_fn_strip( $post->post_content ) : $post->post_content ) );
             }
         }
     } elseif ( is_category() || is_tag() || is_tax() ) {

@@ -778,6 +778,12 @@ function rodolfo_schema_graph() {
         unset( $webpage['speakable'], $webpage['mainEntity'] );
     }
 
+    if ( is_singular() && function_exists( 'rodolfo_fn_count' ) && rodolfo_fn_count( $post ) > 0 ) {
+        $nid     = $url . '#notes';
+        $graph[] = array( '@type' => 'WebPageElement', '@id' => $nid, 'name' => __( 'Footnotes', 'rodolfo' ), 'isPartOf' => rodolfo_schema_ref( $webpage_id ), 'cssSelector' => 'ol.' . RODOLFO_PREFIX . '-notes' );
+        $webpage['hasPart'][] = rodolfo_schema_ref( $nid );
+    }
+
     array_splice( $graph, 2, 0, array( $webpage ) );
 
     /** Filter the finished graph (add or amend nodes). */

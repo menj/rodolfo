@@ -243,6 +243,7 @@ $internal = array(
 	'rodolfo_llms_rewrite_v', 'rodolfo_tags_rewrite_v', 'rodolfo_menu_cleanup_v', 'rodolfo_nav_migrated_v', // one-shot version stamps
 	'rodolfo_nav_excluded_pages', // legacy value read once by the nav migration
 	'rodolfo_enable_bctt',        // gate for the disabled click-to-tweet module
+	'rodolfo_unlist_migrated',    // one-shot import of the legacy unlist plugin's IDs
 	'rodolfo_social_',            // prefix of the per-platform loop
 );
 $disabled_files = array( 'inc/donate.php', 'inc/click-to-tweet.php', 'inc/login.php' );
@@ -292,6 +293,19 @@ rd_check( '[end_mark] shortcode registered', strpos( $em, "add_shortcode( 'end_m
 rd_check( 'end mark skips feeds', strpos( $em, 'is_feed()' ) !== false );
 rd_check( 'end-mark save checks a nonce', strpos( $em, 'wp_verify_nonce' ) !== false );
 
+// --- Footnotes & unlist -------------------------------------------------
+$fn = rd_read( 'inc/footnotes.php' );
+rd_check( "footnotes module is optional", in_array( 'footnotes', $optional_modules, true ) );
+rd_check( 'footnotes run after wpautop', strpos( $fn, "add_filter( 'the_content', 'rodolfo_fn_process', 11 )" ) !== false );
+rd_check( 'footnotes stripped from excerpts', strpos( $fn, "add_filter( 'get_the_excerpt'" ) !== false );
+rd_check( 'footnote save checks nonce and capability', strpos( $fn, 'wp_verify_nonce' ) !== false && strpos( $fn, "current_user_can( 'edit_post'" ) !== false );
+$ul = rd_read( 'inc/unlist.php' );
+rd_check( 'unlist covers every public type except media', strpos( $ul, "array_diff( get_post_types( array( 'public' => true ), 'names' ), array( 'attachment' ) )" ) !== false );
+rd_check( 'unlist bulk edit re-checks the bulk-posts nonce', strpos( $ul, "'bulk-posts'" ) !== false );
+rd_check( 'unlist hides pages from get_pages()', strpos( $ul, "add_filter( 'get_pages', 'rodolfo_unlist_filter_pages' )" ) !== false );
+rd_check( 'unlist hides posts from prev/next links', strpos( $ul, "'get_next_post_where'" ) !== false && strpos( $ul, "'get_previous_post_where'" ) !== false );
+rd_check( 'unlist legacy import runs once', strpos( $ul, "update_option( 'rodolfo_unlist_migrated', '1', false )" ) !== false );
+
 // --- Rebrand tooling -----------------------------------------------------
 $rb = rd_read( 'rebrand-theme.sh' );
 rd_check( 'rebrand script is executable', is_executable( "$root/rebrand-theme.sh" ) );
@@ -326,6 +340,7 @@ require $root . '/inc/accent.php';
 require $root . '/inc/guest-authors.php';
 require $root . '/inc/endmark.php';
 require $root . '/inc/schema.php';
+require $root . '/inc/footnotes.php';
 
 // Accent maths.
 rd_check( 'accent defaults to cobalt', '#3d54d6' === rodolfo_accent() );
@@ -385,6 +400,19 @@ rd_check( 'end mark: nested containers closed depth-aware', 1 === count( $rng ) 
 $html = '<p>Body.</p><ol class="footnotes"><li><p>Note.</p></li></ol>';
 rd_check( 'end mark: respects the footnotes limit', strlen( '<p>Body.' ) === rodolfo_endmark_last_paragraph( $html, strpos( $html, '<ol' ), array() ) );
 rd_check( 'end mark: no paragraphs returns false', false === rodolfo_endmark_last_paragraph( '<h2>Only</h2>', false, array() ) );
+
+// Footnote labels and protected regions.
+rd_check( 'footnote label: decimal', '3' === rodolfo_fn_label( 3, 'decimal', 9 ) );
+rd_check( 'footnote label: leading zero pads to total width', '007' === rodolfo_fn_label( 7, 'decimal-leading-zero', 120 ) );
+rd_check( 'footnote label: alpha wraps at z', 'z' === rodolfo_fn_alpha( 26, false ) && 'aa' === rodolfo_fn_alpha( 27, false ) );
+rd_check( 'footnote label: upper alpha', 'C' === rodolfo_fn_label( 3, 'upper-alpha', 3 ) );
+rd_check( 'footnote label: roman', 'xiv' === rodolfo_fn_label( 14, 'lower-roman', 20 ) && 'MCMXC' === rodolfo_fn_roman( 1990, true ) );
+rd_check( 'footnote label: unknown style falls back to decimal', '5' === rodolfo_fn_label( 5, 'bogus', 9 ) );
+$src  = '<p>a ((n))</p><pre>((x))</pre><code>((y))</code><!-- ((z)) --><!--startnum=4-->';
+$prot = rodolfo_fn_protect( $src, $store );
+rd_check( 'footnotes: pre/code/comments protected', 3 === count( $store ) && false === strpos( $prot, '((x))' ) && false === strpos( $prot, '((z))' ) );
+rd_check( 'footnotes: startnum comment left in place', false !== strpos( $prot, '<!--startnum=4-->' ) );
+rd_check( 'footnotes: protect/restore round-trips', $src === rodolfo_fn_restore( $prot, $store ) );
 
 // Schema cleaning keeps 0/false, drops empties.
 $clean = rodolfo_schema_clean( array( 'a' => '', 'b' => null, 'c' => array(), 'd' => 0, 'e' => false, 'f' => array( 'g' => '' ), 'h' => 'x' ) );

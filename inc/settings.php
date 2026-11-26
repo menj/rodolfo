@@ -38,6 +38,7 @@ function rodolfo_optional_modules() {
         'post-display'     => __( 'Per-post display options', 'rodolfo' ),
         'guest-authors'    => __( 'Guest authors', 'rodolfo' ),
         'endmark'          => __( 'End-of-article mark', 'rodolfo' ),
+        'footnotes'        => __( 'Footnotes', 'rodolfo' ),
     );
     // The constant is the single source of the slugs; labels must match it.
     return array_intersect_key( $labels, array_flip( RODOLFO_OPTIONAL_MODULES ) );
@@ -166,6 +167,16 @@ function rodolfo_option_sanitizers() {
         'rodolfo_ga_default'             => 'sanitize_text_field',
         'rodolfo_ga_join'                => 'rodolfo_sanitize_ga_join',
         'rodolfo_ga_scope'               => 'rodolfo_sanitize_ga_scope',
+        // --- Footnotes ---------------------------------------------------------
+        'rodolfo_fn_open'                => 'rodolfo_sanitize_fn_delimiter',
+        'rodolfo_fn_close'               => 'rodolfo_sanitize_fn_delimiter',
+        'rodolfo_fn_style'               => 'rodolfo_sanitize_fn_style',
+        'rodolfo_fn_backlink'            => 'sanitize_text_field',
+        'rodolfo_fn_back_pos'            => 'rodolfo_sanitize_fn_back_pos',
+        'rodolfo_fn_sup'                 => 'rodolfo_sanitize_checkbox_on',
+        'rodolfo_fn_combine'             => 'rodolfo_sanitize_checkbox_on',
+        'rodolfo_fn_listings'            => 'rodolfo_sanitize_checkbox',
+        'rodolfo_fn_heading'             => 'sanitize_text_field',
         // --- End mark ----------------------------------------------------------
         'rodolfo_em_enabled'             => 'rodolfo_sanitize_checkbox_on',
         'rodolfo_em_pages'               => 'rodolfo_sanitize_checkbox',
@@ -213,6 +224,8 @@ function rodolfo_choice_registry() {
         'rodolfo_ps_placement'      => array( 'none' => __( 'Shortcode only', 'rodolfo' ), 'after_post' => __( 'After each post', 'rodolfo' ), 'footer' => __( 'Site footer', 'rodolfo' ), 'sidebar' => __( 'Sidebar', 'rodolfo' ) ),
         'rodolfo_ga_join'           => array( 'natural' => __( 'A, B and C', 'rodolfo' ), 'comma' => __( 'A, B, C', 'rodolfo' ), 'ampersand' => __( 'A & B & C', 'rodolfo' ) ),
         'rodolfo_ga_scope'          => array( 'all' => __( 'Everywhere the byline is shown', 'rodolfo' ), 'singular' => __( 'Single posts only', 'rodolfo' ) ),
+        'rodolfo_fn_style'          => array( 'decimal' => '1, 2, 3', 'decimal-leading-zero' => '01, 02, 03', 'lower-alpha' => 'a, b, c', 'upper-alpha' => 'A, B, C', 'lower-roman' => 'i, ii, iii', 'upper-roman' => 'I, II, III' ),
+        'rodolfo_fn_back_pos'       => array( 'end' => __( 'After the note', 'rodolfo' ), 'start' => __( 'Before the note', 'rodolfo' ) ),
         'rodolfo_em_type'           => array( 'symbol' => __( 'Symbol', 'rodolfo' ), 'image' => __( 'Image', 'rodolfo' ) ),
         'rodolfo_em_placement'      => array( 'last_paragraph' => __( 'End of the last paragraph', 'rodolfo' ), 'before_footnotes' => __( 'Before the footnotes', 'rodolfo' ), 'append' => __( 'After all content', 'rodolfo' ), 'selector' => __( 'Before a CSS class or id', 'rodolfo' ) ),
         'rodolfo_org_type'          => array( 'Organization' => __( 'Organization', 'rodolfo' ), 'Person' => __( 'Person', 'rodolfo' ) ),
@@ -228,6 +241,7 @@ function rodolfo_choice_default( $option ) {
         'rodolfo_ps_placement' => 'none', 'rodolfo_org_type' => 'Organization',
         'rodolfo_article_type' => 'BlogPosting',
         'rodolfo_ga_join' => 'natural', 'rodolfo_ga_scope' => 'all',
+        'rodolfo_fn_style' => 'decimal', 'rodolfo_fn_back_pos' => 'end',
         'rodolfo_em_type' => 'symbol', 'rodolfo_em_placement' => 'last_paragraph',
     );
     return isset( $defaults[ $option ] ) ? $defaults[ $option ] : '';
@@ -256,6 +270,15 @@ function rodolfo_sanitize_org_type( $v )          { return rodolfo_sanitize_choi
 function rodolfo_sanitize_article_type( $v )      { return rodolfo_sanitize_choice( 'rodolfo_article_type', $v ); }
 function rodolfo_sanitize_ga_join( $v )           { return rodolfo_sanitize_choice( 'rodolfo_ga_join', $v ); }
 function rodolfo_sanitize_ga_scope( $v )          { return rodolfo_sanitize_choice( 'rodolfo_ga_scope', $v ); }
+function rodolfo_sanitize_fn_style( $v )         { return rodolfo_sanitize_choice( 'rodolfo_fn_style', $v ); }
+function rodolfo_sanitize_fn_back_pos( $v )      { return rodolfo_sanitize_choice( 'rodolfo_fn_back_pos', $v ); }
+
+/** Footnote delimiter: 1-4 visible characters, no angle brackets or whitespace. */
+function rodolfo_sanitize_fn_delimiter( $v ) {
+    $v = trim( (string) $v );
+    return ( '' !== $v && strlen( $v ) <= 4 && ! preg_match( '/[\s<>&"\']/', $v ) ) ? $v : '';
+}
+
 function rodolfo_sanitize_em_type( $v )           { return rodolfo_sanitize_choice( 'rodolfo_em_type', $v ); }
 function rodolfo_sanitize_em_placement( $v )      { return rodolfo_sanitize_choice( 'rodolfo_em_placement', $v ); }
 

@@ -94,7 +94,7 @@ add_shortcode( 'end_mark', 'rodolfo_endmark_shortcode' );
  */
 function rodolfo_endmark_protected_ranges( $content ) {
     $ranges = array();
-    $pattern = '/<(div|section|aside|details|table|ol|ul|dl)\b[^>]*(?:class=["\'][^"\']*\b(?:faq-block|howto-block|quick-answer|proof-callout|comparison-table|footnotes|wp-block-yoast-faq-block|wp-block-yoast-how-to-block)\b[^"\']*["\']|itemtype=["\']https?:\/\/schema\.org\/(?:FAQPage|HowTo|QAPage|Recipe|Review|Product)["\'])[^>]*>/i';
+    $pattern = '/<(div|section|aside|details|table|ol|ul|dl)\b[^>]*(?:class=["\'][^"\']*\b(?:faq-block|howto-block|quick-answer|proof-callout|comparison-table|footnotes|[a-z0-9]+-notes|wp-block-yoast-faq-block|wp-block-yoast-how-to-block)\b[^"\']*["\']|itemtype=["\']https?:\/\/schema\.org\/(?:FAQPage|HowTo|QAPage|Recipe|Review|Product)["\'])[^>]*>/i';
     if ( preg_match_all( $pattern, $content, $m, PREG_OFFSET_CAPTURE ) ) {
         foreach ( $m[0] as $i => $hit ) {
             $end = rodolfo_endmark_closing_pos( $content, strtolower( $m[1][ $i ][0] ), $hit[1] );
@@ -194,6 +194,13 @@ function rodolfo_endmark_filter( $content ) {
 
     $ranges = rodolfo_endmark_protected_ranges( $content );
     $notes  = false;
+    if ( preg_match( '/<ol\b[^>]*class="' . preg_quote( RODOLFO_PREFIX, '/' ) . '-notes"/i', $content, $nm, PREG_OFFSET_CAPTURE ) ) {
+        $notes = $nm[0][1];
+        $title = stripos( $content, '<h2 class="' . RODOLFO_PREFIX . '-notes-title"' );
+        if ( false !== $title && $title < $notes ) {
+            $notes = $title;
+        }
+    }
     foreach ( array( '<ol class="footnotes"', '<div class="footnotes"', '<div id="footnotes"', '<section class="footnotes"', '<div class="simple-footnotes"' ) as $needle ) {
         $p = stripos( $content, $needle );
         if ( false !== $p && ( false === $notes || $p < $notes ) ) {

@@ -37,7 +37,7 @@ if ( ! defined( 'RODOLFO_ASSET_SUFFIX' ) ) {
 const RODOLFO_OPTIONAL_MODULES = array( 'toc', 'related-posts', 'search-palette',
     'tags', 'unlist', 'aeo', 'llms-txt', 'breadcrumbs',
     'reading-progress', 'views', 'author-social', 'privacy-embeds',
-    'comment-guard', 'post-display', 'guest-authors', 'endmark' );
+    'comment-guard', 'post-display', 'guest-authors', 'endmark', 'footnotes' );
 
 foreach ( array(
     'icons',          // inline SVG icon library
@@ -80,6 +80,7 @@ foreach ( array(
     'author-social',  // per-user contact fields for the author card
     'guest-authors',  // per-post custom bylines (one or several names)
     'endmark',        // end-of-article symbol after the last paragraph
+    'footnotes',      // ((note)) footnotes with linked list under the article
     'content-hygiene',// image alt/size, nofollow toggle, comment link rel, meta boxes
 ) as $rodolfo_module ) {
     // A disabled optional module is never even required; templates guard every

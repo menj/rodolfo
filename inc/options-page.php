@@ -573,6 +573,17 @@ function rodolfo_theme_options_page() {
                 rodolfo_opt_select( 'rodolfo_ga_join', __( 'Joining several names', 'rodolfo' ), __( 'How multiple guest authors are written.', 'rodolfo' ) );
                 rodolfo_opt_select( 'rodolfo_ga_scope', __( 'Guest bylines apply', 'rodolfo' ), __( 'Per-post names can be limited to single post views; the default byline always applies.', 'rodolfo' ) );
 
+                // ---- Footnotes -----------------------------------------------------
+                rodolfo_opt_text( 'rodolfo_fn_open', __( 'Footnote opening marker', 'rodolfo' ), __( 'Write a note as ((like this)). Up to 4 characters, no spaces or angle brackets. Default: ((', 'rodolfo' ), '((' );
+                rodolfo_opt_text( 'rodolfo_fn_close', __( 'Footnote closing marker', 'rodolfo' ), __( 'Default: ))', 'rodolfo' ), '))' );
+                rodolfo_opt_select( 'rodolfo_fn_style', __( 'Footnote numbering', 'rodolfo' ), __( 'Can be overridden per post in the Footnotes box of the editor.', 'rodolfo' ) );
+                rodolfo_opt_text( 'rodolfo_fn_heading', __( 'Footnotes heading', 'rodolfo' ), __( 'Optional heading above the list, for example Notes. Leave blank for none.', 'rodolfo' ), __( 'Notes', 'rodolfo' ) );
+                rodolfo_opt_text( 'rodolfo_fn_backlink', __( 'Back-link symbol', 'rodolfo' ), __( 'Link from a note back to the text. Default: ↩', 'rodolfo' ), '↩' );
+                rodolfo_opt_select( 'rodolfo_fn_back_pos', __( 'Back-link position', 'rodolfo' ), '' );
+                rodolfo_opt_check( 'rodolfo_fn_sup', __( 'Footnote numbers', 'rodolfo' ), '', __( 'Show numbers as superscript', 'rodolfo' ), '1' );
+                rodolfo_opt_check( 'rodolfo_fn_combine', __( 'Identical notes', 'rodolfo' ), __( 'Notes with the same text share one entry with several back-links. Use ((ref:2)) to repeat note 2.', 'rodolfo' ), __( 'Merge identical notes', 'rodolfo' ), '1' );
+                rodolfo_opt_check( 'rodolfo_fn_listings', __( 'Footnotes in listings', 'rodolfo' ), __( 'Show the notes when full posts appear on the home page, archives or search.', 'rodolfo' ), __( 'Show in listings', 'rodolfo' ) );
+
                 // ---- End mark -----------------------------------------------------
                 rodolfo_opt_check( 'rodolfo_em_enabled', __( 'End mark', 'rodolfo' ), __( 'A small symbol after the last paragraph of each article. Turn it off for one post in the End mark box of the editor, or place it by hand with [end_mark].', 'rodolfo' ), __( 'Show the end mark', 'rodolfo' ), '1' );
                 rodolfo_opt_check( 'rodolfo_em_pages', __( 'End mark on pages', 'rodolfo' ), __( 'Posts always; tick to include pages.', 'rodolfo' ), __( 'Also on pages', 'rodolfo' ) );
