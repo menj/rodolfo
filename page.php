@@ -1,6 +1,7 @@
 <?php get_header(); ?>
 
 <main id="content" class="flex-grow max-w-[1400px] mx-auto px-4 md:px-8 w-full pt-8 md:pt-12 pb-8 md:pb-12">
+    <?php if ( function_exists( 'rodolfo_breadcrumbs' ) ) { rodolfo_breadcrumbs(); } ?>
     <?php
     if ( have_posts() ) :
         while ( have_posts() ) : the_post();
@@ -9,7 +10,7 @@
             
             <?php if ( has_post_thumbnail() ) : ?>
                 <div class="w-full aspect-[21/9] md:aspect-[2.5/1] overflow-hidden relative">
-                    <?php the_post_thumbnail('full', array('class' => 'w-full h-full object-cover')); ?>
+                    <?php the_post_thumbnail( 'full', array( 'class' => 'w-full h-full object-cover', 'loading' => 'eager', 'fetchpriority' => 'high', 'decoding' => 'async' ) ); ?>
                 </div>
             <?php endif; ?>
 

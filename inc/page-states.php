@@ -66,7 +66,7 @@ function rodolfo_coming_soon_content( $content ) {
         $note = __( 'This page is being written. Check back soon.', 'rodolfo' );
     }
 
-    $html  = '<div class="rodolfo-coming-soon not-prose my-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-8 text-center">';
+    $html  = '<div class="tk-coming-soon not-prose my-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-8 text-center">';
     $html .= '<p class="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-3">' . esc_html__( 'Coming soon', 'rodolfo' ) . '</p>';
     $html .= '<p class="text-slate-600 dark:text-slate-300 max-w-prose mx-auto">' . esc_html( $note ) . '</p>';
     $html .= '</div>';

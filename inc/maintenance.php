@@ -3,7 +3,6 @@
  * Maintenance / coming-soon mode: copy, themed wp_die handler, template_redirect gate.
  *
  * Extracted verbatim from functions.php in 3.4.0 — a pure structural move,
- * no behavioural change. See docs/ssot.md for the module map.
  *
  * @package Rodolfo
  */

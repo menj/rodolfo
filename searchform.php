@@ -13,9 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$rodolfo_sf_id = 'rodolfo-search-' . wp_unique_id();
+$rodolfo_sf_id = 'tk-search-' . wp_unique_id();
 ?>
-<form role="search" method="get" class="rodolfo-searchform relative" action="<?php echo esc_url( home_url( '/' ) ); ?>">
+<form role="search" method="get" class="tk-searchform relative" action="<?php echo esc_url( home_url( '/' ) ); ?>">
     <label class="sr-only" for="<?php echo esc_attr( $rodolfo_sf_id ); ?>">
         <?php echo esc_html_x( 'Search for:', 'label', 'rodolfo' ); ?>
     </label>

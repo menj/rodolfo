@@ -4,7 +4,7 @@
  *
  * The entire front-end accent system is already variable-driven: the compiled
  * Tailwind sheet ships stock blues and style.css re-points every blue utility
- * the templates use to --rodolfo-accent (+ the -700/-500/-400 shades). So a
+ * the templates use to --tk-accent (+ the -700/-500/-400 shades). So a
  * user-chosen accent needs exactly one thing: override those four variables.
  * When the picker sits at the default cobalt, this module prints NOTHING —
  * zero cost for the default install.
@@ -56,10 +56,10 @@ function rodolfo_accent_mix( $hex, $amount ) {
 function rodolfo_accent_vars() {
     $accent = rodolfo_accent();
     return array(
-        '--rodolfo-accent'     => $accent,
-        '--rodolfo-accent-700' => rodolfo_accent_mix( $accent, -0.22 ),
-        '--rodolfo-accent-500' => rodolfo_accent_mix( $accent, 0.14 ),
-        '--rodolfo-accent-400' => rodolfo_accent_mix( $accent, 0.36 ),
+        '--tk-accent'     => $accent,
+        '--tk-accent-700' => rodolfo_accent_mix( $accent, -0.22 ),
+        '--tk-accent-500' => rodolfo_accent_mix( $accent, 0.14 ),
+        '--tk-accent-400' => rodolfo_accent_mix( $accent, 0.36 ),
     );
 }
 
@@ -89,17 +89,17 @@ function rodolfo_accent_output() {
     }
     $css .= '}';
     // Attached to the runtime layer so it always outputs after style.css.
-    wp_add_inline_style( 'rodolfo-style', $css );
+    wp_add_inline_style( rodolfo_handle( 'theme' ), $css );
 }
 add_action( 'wp_enqueue_scripts', 'rodolfo_accent_output', 20 );
 
 /** The options screen carries the accent in its own scoped variables. */
 function rodolfo_accent_admin( $hook ) {
-    if ( 'appearance_page_rodolfo-theme-options' !== $hook || strtolower( rodolfo_accent() ) === RODOLFO_ACCENT_DEFAULT ) {
+    if ( 'appearance_page_tk-theme-options' !== $hook || strtolower( rodolfo_accent() ) === RODOLFO_ACCENT_DEFAULT ) {
         return;
     }
-    wp_add_inline_style( 'rodolfo-admin', sprintf(
-        '.rodolfo-opts{--rd-accent:%s;--rd-accent-700:%s}',
+    wp_add_inline_style( 'tk-admin', sprintf(
+        '.tk-opts{--rd-accent:%s;--rd-accent-700:%s}',
         rodolfo_accent(),
         rodolfo_accent_mix( rodolfo_accent(), -0.22 )
     ) );

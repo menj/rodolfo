@@ -41,7 +41,7 @@ function rodolfo_post_display( $post = null ) {
 /** Side meta box on posts. */
 function rodolfo_post_display_box() {
     add_meta_box(
-        'rodolfo-post-display',
+        'tk-post-display',
         __( 'Display', 'rodolfo' ),
         'rodolfo_post_display_box_render',
         'post',

@@ -3,7 +3,6 @@
  * Navigation resolution: primary/secondary Page nav, per-page location & order, privacy-page resolver, built-in footer utility links.
  *
  * Extracted verbatim from functions.php in 3.4.0 — a pure structural move,
- * no behavioural change. See docs/ssot.md for the module map.
  *
  * @package Rodolfo
  */
@@ -106,6 +105,10 @@ function rodolfo_nav_pages() {
     $privacy    = rodolfo_privacy_page();
     if ( $privacy ) {
         $exclude[] = (int) $privacy->ID;
+    }
+    $sitemap = function_exists( 'rodolfo_sitemap_page' ) ? rodolfo_sitemap_page() : null;
+    if ( $sitemap ) {
+        $exclude[] = (int) $sitemap->ID;
     }
     return get_pages( array(
         'parent'      => 0,
@@ -261,6 +264,9 @@ function rodolfo_footer_util_link( $key, $custom_label = '' ) {
             break;
         case 'sitemap':
             $url = get_option( 'rodolfo_link_sitemap' );
+            if ( ! $url && function_exists( 'rodolfo_sitemap_page_url' ) ) {
+                $url = rodolfo_sitemap_page_url();
+            }
             if ( ! $url && function_exists( 'get_sitemap_url' ) ) {
                 $url = get_sitemap_url( 'index' );
             }
@@ -314,4 +320,52 @@ function rodolfo_footer_nav_items() {
     } );
 
     return $items;
+}
+
+// ---------------------------------------------------------------
+// HTML sitemap + topic helpers (shared by footer, page-sitemap.php, 404, schema)
+// ---------------------------------------------------------------
+
+/** The page using the HTML sitemap template, or null. */
+function rodolfo_sitemap_page() {
+    static $page = false;
+    if ( false === $page ) {
+        $found = get_pages( array(
+            'meta_key'    => '_wp_page_template',
+            'meta_value'  => 'page-sitemap.php',
+            'number'      => 1,
+            'post_status' => 'publish',
+        ) );
+        $page = $found ? $found[0] : null;
+    }
+    return $page;
+}
+
+function rodolfo_sitemap_page_url() {
+    $page = rodolfo_sitemap_page();
+    return $page ? get_permalink( $page->ID ) : '';
+}
+
+/** Most-used categories (footer "Explore Topics", 404 page). */
+function rodolfo_footer_topics( $limit = 6 ) {
+    $terms = get_categories( array(
+        'orderby'    => 'count',
+        'order'      => 'DESC',
+        'number'     => (int) $limit,
+        'hide_empty' => true,
+    ) );
+    return is_array( $terms ) ? $terms : array();
+}
+
+/** Sections of the HTML sitemap as array( name, url ) — drives its ItemList schema. */
+function rodolfo_sitemap_links() {
+    $base = rodolfo_sitemap_page_url();
+    if ( ! $base ) {
+        return array();
+    }
+    return array(
+        array( __( 'Pages', 'rodolfo' ), $base . '#pages' ),
+        array( __( 'Categories', 'rodolfo' ), $base . '#categories' ),
+        array( __( 'Recent posts', 'rodolfo' ), $base . '#posts' ),
+    );
 }

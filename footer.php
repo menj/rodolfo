@@ -1,7 +1,8 @@
-    <footer class="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-auto z-10 relative text-slate-600 dark:text-slate-400">
+    <?php $footer_cols = function_exists( 'rodolfo_choice' ) ? (int) rodolfo_choice( 'rodolfo_footer_columns' ) : 2; ?>
+    <footer id="site-footer" class="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-auto z-10 relative text-slate-600 dark:text-slate-400">
 
         <?php // ── Top area: brand block + About column ─────────────────────── ?>
-        <div class="max-w-[1400px] mx-auto px-4 md:px-8 py-12 grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div class="ftr-grid ftr-cols-<?php echo (int) $footer_cols; ?> max-w-[1400px] mx-auto px-4 md:px-8 py-12 gap-10">
 
             <div class="flex flex-col items-start gap-4">
                 <div class="flex items-center gap-3">
@@ -13,7 +14,8 @@
                             <img
                                 src="<?php echo esc_url( $logo_src[0] ); ?>"
                                 alt="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>"
-                                class="rodolfo-logo-img rodolfo-logo-img--lg"
+                                width="<?php echo (int) $logo_src[1]; ?>" height="<?php echo (int) $logo_src[2]; ?>" loading="lazy" decoding="async"
+                                class="tk-logo-img tk-logo-img--lg"
                             />
                         <?php endif;
                     else :
@@ -22,14 +24,14 @@
                         $site_name = get_bloginfo( 'name' );
                         $initial   = function_exists( 'mb_substr' ) ? mb_substr( $site_name, 0, 1 ) : substr( $site_name, 0, 1 );
                         ?>
-                        <div class="rodolfo-brand-mark rodolfo-brand-mark--lg border border-slate-100 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xl text-slate-600 dark:text-slate-300" aria-hidden="true">
+                        <div class="tk-brand-mark tk-brand-mark--lg border border-slate-100 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xl text-slate-600 dark:text-slate-300" aria-hidden="true">
                             <?php echo esc_html( strtoupper( $initial ) ); ?>
                         </div>
                     <?php endif; ?>
 
                     <?php
                     // Wordmark — the last word of the site name is emphasised in the
-                    // accent colour (screenshot treatment, mapped to Rodolfo blue).
+                    // accent colour (the accent colour).
                     $site_name = get_bloginfo( 'name' );
                     $words     = preg_split( '/\s+/', trim( $site_name ) );
                     $last_word = array_pop( $words );
@@ -45,36 +47,48 @@
                 <?php if ( get_bloginfo( 'description' ) ) : ?>
                     <p class="text-sm leading-relaxed max-w-sm"><?php bloginfo( 'description' ); ?></p>
                 <?php endif; ?>
+                <?php if ( $footer_cols < 3 && function_exists( 'rodolfo_preferred_source' ) ) { rodolfo_preferred_source( 'footer' ); } ?>
             </div>
 
+            <?php
+            // Topics: the site's most-used categories — automatic, zero setup.
+            $footer_terms      = rodolfo_footer_topics( 6 );
+            $footer_links_html = '';
+            foreach ( $footer_terms as $footer_term ) {
+                $footer_links_html .= '<a href="' . esc_url( get_category_link( $footer_term->term_id ) ) . '" class="text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors">' . esc_html( $footer_term->name ) . '</a>';
+            }
+            $topics_block = '';
+            if ( trim( $footer_links_html ) ) {
+                $topics_block = '<h2 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 uppercase tracking-wide">' . esc_html__( 'Explore Topics', 'rodolfo' ) . '</h2>'
+                    . '<nav class="flex flex-wrap gap-x-6 gap-y-3" aria-label="' . esc_attr__( 'Explore topics', 'rodolfo' ) . '">' . $footer_links_html . '</nav>';
+            }
+            ?>
+            <?php if ( 1 === $footer_cols && $topics_block ) : ?>
+                <div><?php echo $topics_block; // Escaped above. ?></div>
+            <?php endif; ?>
+
+            <?php if ( $footer_cols >= 2 && $topics_block ) : ?>
+            <div><?php echo $topics_block; // Escaped above. ?></div>
+            <?php endif; ?>
+
+            <?php if ( $footer_cols >= 3 ) : ?>
             <div>
-                <?php
-                // Tertiary column — "Explore Topics". This is a CONTENT column, not
-                // a page menu: Pages are handled entirely by the primary nav and the
-                // secondary (footer) row, so showing them here would just duplicate
-                // links. It always lists the site's most-used categories — automatic,
-                // zero setup, and only renders when categories exist.
-                $footer_heading = __( 'Explore Topics', 'rodolfo' );
-                $footer_terms   = get_categories( array(
-                    'orderby'    => 'count',
-                    'order'      => 'DESC',
-                    'number'     => 6,
-                    'hide_empty' => true,
-                ) );
-                $footer_links_html = '';
-                foreach ( $footer_terms as $footer_term ) {
-                    $footer_links_html .= '<a href="' . esc_url( get_category_link( $footer_term->term_id ) ) . '" class="text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors">' . esc_html( $footer_term->name ) . '</a>';
-                }
-                if ( trim( $footer_links_html ) ) : ?>
-                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 uppercase tracking-wide"><?php echo esc_html( $footer_heading ); ?></h3>
-                <nav class="flex flex-wrap gap-x-6 gap-y-3" aria-label="<?php esc_attr_e( 'Explore topics', 'rodolfo' ); ?>">
-                    <?php echo $footer_links_html; // Escaped above. ?>
+                <h2 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 uppercase tracking-wide"><?php esc_html_e( 'Pages', 'rodolfo' ); ?></h2>
+                <nav class="flex flex-wrap gap-x-6 gap-y-3" aria-label="<?php esc_attr_e( 'Site pages', 'rodolfo' ); ?>">
+                    <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors"><?php esc_html_e( 'Home', 'rodolfo' ); ?></a>
+                    <?php foreach ( rodolfo_primary_nav_pages() as $rodolfo_fp ) : ?>
+                        <a href="<?php echo esc_url( get_permalink( $rodolfo_fp->ID ) ); ?>" class="text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors"><?php echo esc_html( get_the_title( $rodolfo_fp->ID ) ); ?></a>
+                    <?php endforeach; ?>
+                    <?php if ( rodolfo_sitemap_page_url() ) : ?>
+                        <a href="<?php echo esc_url( rodolfo_sitemap_page_url() ); ?>" class="text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors"><?php esc_html_e( 'Sitemap', 'rodolfo' ); ?></a>
+                    <?php endif; ?>
                 </nav>
-                <?php endif; ?>
+                <?php if ( function_exists( 'rodolfo_preferred_source' ) ) { rodolfo_preferred_source( 'footer' ); } ?>
             </div>
+            <?php endif; ?>
         </div>
 
-        <?php // ── Accent divider with centred ornament (gold → Rodolfo blue) ── ?>
+        <?php // ── Accent divider with centred ornament (accent colour) ── ?>
         <div class="max-w-[1400px] mx-auto px-4 md:px-8" aria-hidden="true">
             <div class="flex items-center gap-4">
                 <span class="flex-grow h-px bg-slate-200 dark:bg-slate-800"></span>

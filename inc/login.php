@@ -37,7 +37,7 @@ function rodolfo_login_styles() {
     $logo   = rodolfo_login_logo_src();
     $accent = function_exists( 'rodolfo_accent' ) ? rodolfo_accent() : '#3d54d6'; // Customizer accent (inc/accent.php), brand cobalt by default.
     ?>
-    <style id="rodolfo-login">
+    <style id="tk-login">
         <?php if ( $logo ) : ?>
         .login h1 a {
             background-image: url(<?php echo esc_url( $logo ); ?>);

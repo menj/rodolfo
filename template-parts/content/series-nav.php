@@ -22,7 +22,7 @@ if ( ! $rodolfo_series || $rodolfo_series['total'] < 2 ) {
     return; // A "series" of one is just a post.
 }
 ?>
-<aside class="rodolfo-series my-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-6"
+<aside class="tk-series my-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-6"
        aria-label="<?php esc_attr_e( 'Series navigation', 'rodolfo' ); ?>">
 
     <div class="flex items-center gap-2 mb-3 text-slate-500 dark:text-slate-400">

@@ -24,9 +24,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 function rodolfo_register_sidebar() {
     register_sidebar( array(
         'name'          => __( 'Blog sidebar', 'rodolfo' ),
-        'id'            => 'rodolfo-sidebar',
+        'id'            => 'tk-sidebar',
         'description'   => __( 'Optional. Only appears once you enable the sidebar under Theme Options → Content, and only on the views you choose there. The theme is designed as a single column — a sidebar is supported, not recommended.', 'rodolfo' ),
-        'before_widget' => '<section id="%1$s" class="rodolfo-widget %2$s mb-8 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-6">',
+        'before_widget' => '<section id="%1$s" class="tk-widget %2$s mb-8 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-6">',
         'after_widget'  => '</section>',
         'before_title'  => '<h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-4">',
         'after_title'   => '</h2>',
@@ -43,7 +43,7 @@ function rodolfo_has_sidebar() {
     if ( ! get_option( 'rodolfo_sidebar_enabled' ) ) {
         return false;
     }
-    if ( ! is_active_sidebar( 'rodolfo-sidebar' ) ) {
+    if ( ! is_active_sidebar( 'tk-sidebar' ) ) {
         return false; // Enabled but empty — render nothing rather than a dead column.
     }
 

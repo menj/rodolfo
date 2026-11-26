@@ -1,10 +1,10 @@
 <?php
 /**
- * Rodolfo Theme Functions
+ * Theme functions.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-        exit; // Exit if accessed directly.
+    exit; // Exit if accessed directly.
 }
 
 // Theme version — single constant so PHP never re-reads style.css per call.
@@ -12,53 +12,62 @@ if ( ! defined( 'RODOLFO_VERSION' ) ) {
     define( 'RODOLFO_VERSION', wp_get_theme()->get( 'Version' ) );
 }
 
-// Asset suffix: serve un-minified sources under SCRIPT_DEBUG, minified live.
-// Every source asset ships with a .min twin — editing a source WITHOUT
-// regenerating its .min file changes nothing on a live site.
-if ( ! defined( 'RODOLFO_ASSET_SUFFIX' ) ) {
-    define( 'RODOLFO_ASSET_SUFFIX', ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min' );
+/**
+ * Front-end prefix for CSS classes, HTML ids and script/style handles.
+ * Static assets ship with the same default prefix; rebrand-theme.sh rewrites
+ * both together so each install gets its own vocabulary.
+ */
+if ( ! defined( 'RODOLFO_PREFIX' ) ) {
+    define( 'RODOLFO_PREFIX', 'tk' );
 }
 
-// Feature modules. The first block is structural (extracted from this file in
-// 3.4.0) and loads first: icons and nav define helpers the templates and other
-// modules call at render time.
+/** Build a prefixed handle / id, e.g. rodolfo_handle( 'theme' ) => 'tk-theme'. */
+function rodolfo_handle( $slug ) {
+    return RODOLFO_PREFIX . '-' . $slug;
+}
+
+// Every shipped asset is already minified.
+if ( ! defined( 'RODOLFO_ASSET_SUFFIX' ) ) {
+    define( 'RODOLFO_ASSET_SUFFIX', '.min' );
+}
+
 // Feature-toggle whitelist (Theme Options → Features). Slugs only; labels in
 // settings.php. Structural modules and modules owning content structures are
 // deliberately not offered — disabling those breaks data, not a feature.
 const RODOLFO_OPTIONAL_MODULES = array( 'toc', 'related-posts', 'search-palette',
-    'tags', 'click-to-tweet', 'unlist', 'aeo', 'llms-txt', 'breadcrumbs',
-    'reading-progress', 'donate', 'views', 'author-social', 'privacy-embeds',
-    'comment-guard', 'post-display' );
+    'tags', 'unlist', 'aeo', 'llms-txt', 'breadcrumbs',
+    'reading-progress', 'views', 'author-social', 'privacy-embeds',
+    'comment-guard', 'post-display', 'guest-authors', 'endmark' );
 
 foreach ( array(
-    'icons',          // inline SVG icon library (rodolfo_icon)
+    'icons',          // inline SVG icon library
     'nav',            // Page-driven nav, privacy resolver, footer utility links
     'system-report',  // sectioned diagnostics + JSON export for System Info
     'settings',       // option registry + sanitizer map (the persistence contract)
     'options-actions',// admin CSS, export/import/reset, menu registration
     'options-page',   // Theme Options screen markup
     'maintenance',    // maintenance / coming-soon holding page
-    'performance',    // emoji/embed/jQuery-Migrate toggles + script injection
-    'meta-tags',      // SEO description / OG / Twitter (self-disables under an SEO plugin)
-    'schema',         // JSON-LD structured data
+    'performance',    // head cleanup, emoji/embed toggles, script injection
+    'meta-tags',      // titles, descriptions, canonical, robots, OG/Twitter
+    'schema',         // JSON-LD @graph (Schema.org)
     'social-card',    // generated share card when no featured image
     'favicon',        // site-icon fallback until a core Site Icon is set
     'category-color', // per-category accent colour
     'toc',            // auto table of contents on long-form posts
     'related-posts',  // related posts on single view
     'search-palette', // ⌘K live search overlay
-    'tags',           // built-in virtual /tags/ page (no setup needed)
-    'click-to-tweet', // [bctt] click-to-tweet quote blocks
+    'tags',           // built-in virtual /tags/ page
+    // 'click-to-tweet', // disabled: non-GEO footprint module
     'unlist',         // hide posts from listings, keep single URL live
-    'aeo',            // AI-answer blocks: [answer], [faqs]/[faq] + FAQPage JSON-LD, [compare]
-    'llms-txt',       // GEO: virtual /llms.txt site summary + AI-crawler robots guidance
-    'breadcrumbs',    // visible breadcrumb trail (defers to Rank Math/Yoast)
-    'login',          // branded wp-login screen
+    'aeo',            // [answer], [faqs]/[faq], [compare], [proof], [howto]
+    'llms-txt',       // GEO: virtual /llms.txt + AI-crawler robots guidance
+    'preferred-sources', // Google Search "Preferred Sources" link / button
+    'breadcrumbs',    // visible breadcrumb trail (shared with the schema graph)
+    // 'login',       // disabled: non-GEO footprint module
     'reading-progress', // scroll reading-progress bar on posts/pages
-    'donate',         // [donate] button (presentational; gateway stays a plugin)
-    'fonts',          // self-hosted Inter (only if the woff2 is present)
+    // 'donate',      // disabled: non-GEO footprint module
+    'fonts',          // optional self-hosted WOFF2 (system stack by default)
     'setup',          // idempotent page/menu scaffolding
-    'docs',           // renders docs/*.md inside Theme Options → Documentation
     'editor',         // block editor parity: styles, palette, font sizes
     'reading-time',   // reading-time estimate, post series, feed content
     'sidebar',        // optional widget area (off by default)
@@ -66,12 +75,15 @@ foreach ( array(
     'views',          // per-post view count + popular/trending helpers
     'privacy-embeds', // consent-gated iframe embeds (off by default)
     'comment-guard',  // honeypot + time trap + optional Turnstile (off by default)
-    'accent',         // Customizer accent colour → the --rodolfo-accent variables
+    'accent',         // Customizer accent colour → the accent CSS variables
     'post-display',   // per-post hide-title / hide-featured / full-width flags
     'author-social',  // per-user contact fields for the author card
+    'guest-authors',  // per-post custom bylines (one or several names)
+    'endmark',        // end-of-article symbol after the last paragraph
+    'content-hygiene',// image alt/size, nofollow toggle, comment link rel, meta boxes
 ) as $rodolfo_module ) {
     // A disabled optional module is never even required; templates guard every
-    // optional helper with function_exists (kept so by the undefined-call test).
+    // optional helper with function_exists.
     if ( in_array( $rodolfo_module, RODOLFO_OPTIONAL_MODULES, true ) && get_option( 'rodolfo_disable_' . $rodolfo_module ) ) {
         continue;
     }
@@ -83,13 +95,8 @@ function rodolfo_setup() {
     // Load theme translations. Must be the first call in setup.
     load_theme_textdomain( 'rodolfo', get_template_directory() . '/languages' );
 
-    // Add default posts and comments RSS feed links to head.
     add_theme_support( 'automatic-feed-links' );
-
-    // Let WordPress manage the document title.
     add_theme_support( 'title-tag' );
-
-    // Enable support for Post Thumbnails on posts and pages.
     add_theme_support( 'post-thumbnails' );
 
     // Register menus. The footer "Explore Topics" column is content-driven
@@ -99,19 +106,11 @@ function rodolfo_setup() {
         'secondary' => esc_html__( 'Secondary Menu (below copyright)', 'rodolfo' ),
     ) );
 
-    // Add theme support for HTML5 markup.
     add_theme_support( 'html5', array(
-        'search-form',
-        'comment-form',
-        'comment-list',
-        'gallery',
-        'caption',
-        'style',
-        'script',
+        'search-form', 'comment-form', 'comment-list', 'gallery', 'caption', 'style', 'script',
     ) );
 
     // Custom logo — lets users upload a site logo via Appearance → Customize.
-    // Replaces the admin email Gravatar in the header and footer when set.
     add_theme_support( 'custom-logo', array(
         'height'      => 80,
         'width'       => 80,
@@ -119,92 +118,127 @@ function rodolfo_setup() {
         'flex-width'  => true,
     ) );
 
-    // Block editor support — wide/full alignments and responsive embed wrappers.
     add_theme_support( 'align-wide' );
     add_theme_support( 'responsive-embeds' );
 }
 add_action( 'after_setup_theme', 'rodolfo_setup' );
 
+/**
+ * Front-end assets.
+ *
+ * Core CSS (assets/css/theme.min.css) carries the layout; extras.min.css holds
+ * the optional-module styles. No UI-toolkit library, no web fonts, no
+ * jQuery-dependent scripts. With "Inline the theme CSS" on, the core sheet is
+ * printed in a <style> tag and there is no render-blocking CSS request.
+ */
 function rodolfo_scripts() {
     $version = RODOLFO_VERSION;
+    $css_dir = get_template_directory() . '/assets/css/';
+    $css_uri = get_template_directory_uri() . '/assets/css/';
+    $handle  = rodolfo_handle( 'theme' );
 
-    // Rodolfo UI layer (bundled locally, MIT — vendored UI framework, name-
-    // neutral by design). All of its rules are ancestor-scoped under `.rodolfo-ui`
-    // (its `:root`/`[data-bs-theme]` variables kept global), so the UI framework —
-    // including its many `!important` utilities — only applies inside opt-in
-    // `.rodolfo-ui` containers and can never touch the theme's own markup.
-    // Enqueued first as a dependency of the core sheet for predictable order.
-    wp_enqueue_style(
-        'rodolfo-ui',
-        get_template_directory_uri() . '/assets/lib/ui.min.css',
-        array(),
-        $version
-    );
+    if ( get_option( 'rodolfo_inline_css' ) && is_readable( $css_dir . 'theme.min.css' ) ) {
+        wp_register_style( $handle, false, array(), $version );
+        wp_enqueue_style( $handle );
+        wp_add_inline_style( $handle, (string) file_get_contents( $css_dir . 'theme.min.css' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+    } else {
+        wp_enqueue_style( $handle, $css_uri . 'theme.min.css', array(), $version );
+    }
+    wp_enqueue_style( rodolfo_handle( 'extras' ), $css_uri . 'extras.min.css', array( $handle ), $version );
 
-    // Compiled core CSS — generated from assets/css/input.css via the CLI.
-    wp_enqueue_style(
-        'rodolfo-theme',
-        get_template_directory_uri() . '/assets/css/theme.min.css',
-        array( 'rodolfo-ui' ),
-        $version
-    );
-
-    // Theme stylesheet — the header plus a runtime layer that overrides the
-    // compiled sheet (see the note at the top of style.css). Loads after
-    // theme.min.css by dependency so equal-specificity rules win.
-    wp_enqueue_style( 'rodolfo-style', get_stylesheet_uri(), array( 'rodolfo-theme' ), $version );
-
-    // Theme script — dark mode toggle, share button, bookmark button, mobile menu.
-    // Icons are inlined server-side via rodolfo_icon(), so there is no external
-    // icon library dependency (WordPress.org disallows CDN-loaded scripts, and
-    // JS-rendered icons flash in late and disappear entirely without JS).
-    // RODOLFO_ASSET_SUFFIX serves main.min.js live and main.js under SCRIPT_DEBUG.
+    // Dark-mode toggle, share/bookmark, mobile menu, TOC, search palette.
     wp_enqueue_script(
-        'rodolfo-script',
+        rodolfo_handle( 'script' ),
         get_template_directory_uri() . '/assets/js/main' . RODOLFO_ASSET_SUFFIX . '.js',
         array(),
         $version,
-        true
+        array( 'in_footer' => true, 'strategy' => 'defer' )
     );
-
-    // Translatable strings for main.js — the share/bookmark aria-labels were
-    // previously hardcoded English, the theme's only untranslated strings.
-    wp_localize_script( 'rodolfo-script', 'rodolfoL10n', array(
+    wp_localize_script( rodolfo_handle( 'script' ), 'tkL10n', array(
         'share'          => __( 'Share', 'rodolfo' ),
         'linkCopied'     => __( 'Link copied!', 'rodolfo' ),
         'bookmark'       => __( 'Bookmark', 'rodolfo' ),
         'removeBookmark' => __( 'Remove bookmark', 'rodolfo' ),
     ) );
 
-    // Rodolfo UI JS bundle (Popper included) — modals, dropdowns, collapse,
-    // carousel, tabs, tooltips. Bundled locally (no CDN), loaded in the footer.
-    wp_enqueue_script(
-        'rodolfo-ui',
-        get_template_directory_uri() . '/assets/lib/ui.bundle.min.js',
-        array(),
-        $version,
-        true
-    );
-
-    // Reading-position memory: only where there is a long form to remember.
+    // Reading-position memory: opt-in, posts only.
     if ( is_singular( 'post' ) && get_option( 'rodolfo_resume_enabled' ) ) {
-        $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
         wp_enqueue_script(
-            'rodolfo-resume',
-            get_template_directory_uri() . '/assets/js/resume' . $suffix . '.js',
+            rodolfo_handle( 'resume' ),
+            get_template_directory_uri() . '/assets/js/resume' . RODOLFO_ASSET_SUFFIX . '.js',
             array(),
             $version,
-            true
+            array( 'in_footer' => true, 'strategy' => 'defer' )
         );
     }
 
-    // Threaded replies. Without this, "Reply" only jumps to the form and every
-    // comment lands flat at depth 1, regardless of the Discussion settings.
+    // Threaded replies.
     if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
         wp_enqueue_script( 'comment-reply' );
     }
 }
 add_action( 'wp_enqueue_scripts', 'rodolfo_scripts' );
+
+/**
+ * Optional assets stay off the front end unless explicitly enabled: the
+ * click-to-tweet block script is editor-only and its module ships disabled.
+ */
+function rodolfo_dequeue_optional_assets() {
+    if ( ! get_option( 'rodolfo_enable_bctt' ) ) {
+        wp_dequeue_script( rodolfo_handle( 'bctt-block' ) );
+        wp_deregister_script( rodolfo_handle( 'bctt-block' ) );
+    }
+    if ( ! ( is_singular( 'post' ) && get_option( 'rodolfo_resume_enabled' ) ) ) {
+        wp_dequeue_script( rodolfo_handle( 'resume' ) );
+    }
+}
+add_action( 'wp_enqueue_scripts', 'rodolfo_dequeue_optional_assets', 100 );
+
+// ============================================================
+// SECURITY HARDENING
+// ============================================================
+
+// XML-RPC off, and no pingback advertisement.
+add_filter( 'xmlrpc_enabled', '__return_false' );
+add_filter( 'wp_headers', function ( $headers ) {
+    unset( $headers['X-Pingback'] );
+    return $headers;
+} );
+add_filter( 'pings_open', '__return_false', 20 );
+
+// Author enumeration: /?author=N → home (301). Logged-in editors are exempt so
+// admin screens that rely on the query keep working.
+function rodolfo_block_author_enumeration() {
+    if ( is_admin() || is_user_logged_in() ) {
+        return;
+    }
+    // phpcs:ignore WordPress.Security.NonceVerification -- read-only routing check, value never output.
+    if ( isset( $_GET['author'] ) && '' !== (string) $_GET['author'] && preg_match( '/^\d+$/', (string) wp_unslash( $_GET['author'] ) ) ) {
+        wp_safe_redirect( home_url( '/' ), 301 );
+        exit;
+    }
+}
+add_action( 'template_redirect', 'rodolfo_block_author_enumeration', 1 );
+// Run before the canonical redirect can turn /?author=N into /author/name/.
+add_action( 'parse_request', function () {
+    if ( ! is_admin() && ! is_user_logged_in() && isset( $_GET['author'] ) && preg_match( '/^\d+$/', (string) wp_unslash( $_GET['author'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+        wp_safe_redirect( home_url( '/' ), 301 );
+        exit;
+    }
+}, 0 );
+
+// REST: no unauthenticated user listing.
+add_filter( 'rest_endpoints', function ( $endpoints ) {
+    if ( ! is_user_logged_in() ) {
+        foreach ( array_keys( $endpoints ) as $route ) {
+            if ( 0 === strpos( $route, '/wp/v2/users' ) ) {
+                unset( $endpoints[ $route ] );
+            }
+        }
+    }
+    return $endpoints;
+} );
+
 
 /**
  * Excerpt length. Two contexts, since one number does not fit both: cards on
@@ -323,7 +357,7 @@ add_action( 'customize_register', 'rodolfo_customize_register' );
 // Comment template callback
 function rodolfo_render_author_card() {
     $bio = get_the_author_meta( 'description' );
-    if ( '' === trim( (string) $bio ) ) {
+    if ( '' === trim( (string) $bio ) || ( function_exists( 'rodolfo_has_guest_author' ) && rodolfo_has_guest_author() ) ) {
         return;
     }
     $name      = get_the_author();

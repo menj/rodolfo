@@ -99,12 +99,12 @@ function rodolfo_bctt_shortcode( $atts, $content = null ) {
 
     ob_start();
     ?>
-    <figure class="rodolfo-ctt">
-        <blockquote class="rodolfo-ctt-quote"><?php echo esc_html( $tweet ); ?></blockquote>
-        <a class="rodolfo-ctt-action" href="<?php echo esc_url( $intent ); ?>"
+    <figure class="tk-ctt">
+        <blockquote class="tk-ctt-quote"><?php echo esc_html( $tweet ); ?></blockquote>
+        <a class="tk-ctt-action" href="<?php echo esc_url( $intent ); ?>"
            target="_blank" rel="<?php echo esc_attr( $rel ); ?>">
-            <span class="rodolfo-ctt-prompt"><?php echo esc_html( $atts['prompt'] ); ?></span>
-            <?php echo rodolfo_icon( 'twitter', 'rodolfo-ctt-bird' ); ?>
+            <span class="tk-ctt-prompt"><?php echo esc_html( $atts['prompt'] ); ?></span>
+            <?php echo rodolfo_icon( 'twitter', 'tk-ctt-bird' ); ?>
         </a>
     </figure>
     <?php
@@ -121,7 +121,7 @@ function rodolfo_bctt_shortcode( $atts, $content = null ) {
 function rodolfo_bctt_register_block() {
     $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
     wp_register_script(
-        'rodolfo-bctt-block',
+        'tk-bctt-block',
         get_template_directory_uri() . '/assets/js/bctt-block' . $suffix . '.js',
         array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n' ),
         RODOLFO_VERSION,
@@ -129,7 +129,7 @@ function rodolfo_bctt_register_block() {
     );
     register_block_type( 'rodolfo/click-to-tweet', array(
         'api_version'     => 2,
-        'editor_script'   => 'rodolfo-bctt-block',
+        'editor_script'   => 'tk-bctt-block',
         'attributes'      => array(
             'tweet'  => array( 'type' => 'string', 'default' => '' ),
             'via'    => array( 'type' => 'string', 'default' => '' ),

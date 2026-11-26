@@ -6,7 +6,6 @@
  * admin_post handlers are nonce-checked and manage_options-gated.
  *
  * Extracted from inc/options-page.php in 3.8.0 — a pure structural move, no
- * behavioural change. See docs/ssot.md for the module map.
  *
  * @package Rodolfo
  */
@@ -19,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // ADMIN STYLES — Theme Options page only
 // ============================================================
 function rodolfo_admin_enqueue( $hook ) {
-    if ( $hook !== 'appearance_page_rodolfo-theme-options' ) {
+    if ( $hook !== 'appearance_page_tk-theme-options' ) {
         return;
     }
 
@@ -28,7 +27,7 @@ function rodolfo_admin_enqueue( $hook ) {
     // left the tabs unusable. Enqueued sources pass script-src by URL.
     $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
     wp_enqueue_script(
-        'rodolfo-admin',
+        'tk-admin',
         get_template_directory_uri() . '/assets/js/admin' . $suffix . '.js',
         array(),
         RODOLFO_VERSION,
@@ -38,7 +37,7 @@ function rodolfo_admin_enqueue( $hook ) {
     // switcher above: inline styles die under a strict style-src CSP, and a
     // file is cacheable and overridable where an inline string is neither.
     wp_enqueue_style(
-        'rodolfo-admin',
+        'tk-admin',
         get_template_directory_uri() . '/assets/css/admin' . $suffix . '.css',
         array(),
         RODOLFO_VERSION
@@ -63,7 +62,7 @@ function rodolfo_export_settings() {
         $data[ $key ] = get_option( $key );
     }
 
-    $filename = 'rodolfo-settings-' . gmdate( 'Y-m-d' ) . '.json';
+    $filename = 'tk-settings-' . gmdate( 'Y-m-d' ) . '.json';
     header( 'Content-Type: application/json' );
     header( 'Content-Disposition: attachment; filename=' . $filename );
     header( 'Pragma: no-cache' );
@@ -81,7 +80,7 @@ function rodolfo_import_settings() {
     }
     check_admin_referer( 'rodolfo_import_settings' );
 
-    $redirect = admin_url( 'themes.php?page=rodolfo-theme-options&tab=general' );
+    $redirect = admin_url( 'themes.php?page=tk-theme-options&tab=general' );
 
     $tmp = isset( $_FILES['rodolfo_import_file']['tmp_name'] ) ? $_FILES['rodolfo_import_file']['tmp_name'] : '';
     if ( '' === $tmp || ! is_uploaded_file( $tmp ) ) {
@@ -139,7 +138,7 @@ function rodolfo_reset_settings() {
     $tab = isset( $_POST['rodolfo_active_tab'] ) ? sanitize_key( $_POST['rodolfo_active_tab'] ) : 'general';
     wp_safe_redirect( add_query_arg(
         array( 'rodolfo_notice' => 'reset_ok', 'tab' => $tab ),
-        admin_url( 'themes.php?page=rodolfo-theme-options' )
+        admin_url( 'themes.php?page=tk-theme-options' )
     ) );
     exit;
 }
@@ -153,7 +152,7 @@ function rodolfo_theme_options_menu() {
         __( 'Theme Options', 'rodolfo' ),
         __( 'Theme Options', 'rodolfo' ),
         'manage_options',
-        'rodolfo-theme-options',
+        'tk-theme-options',
         'rodolfo_theme_options_page'
     );
 }

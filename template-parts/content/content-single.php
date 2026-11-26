@@ -85,11 +85,12 @@ $rodolfo_width   = $rodolfo_display['full_width'] ? 'max-w-none' : 'max-w-4xl';
             <?php endif; ?>
 
             <div class="flex items-center gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
-                <?php echo get_avatar( get_the_author_meta( 'user_email' ), 48, '', '', array( 'class' => 'w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800' ) ); ?>
+                <?php $rodolfo_guest = function_exists( 'rodolfo_has_guest_author' ) && rodolfo_has_guest_author(); ?>
+                <?php if ( ! $rodolfo_guest ) { echo get_avatar( get_the_author_meta( 'user_email' ), 48, '', get_the_author(), array( 'class' => 'w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800' ) ); } ?>
                 <div>
                     <div class="font-semibold text-slate-900 dark:text-white"><?php the_author(); ?></div>
                     <div class="text-sm text-slate-500 dark:text-slate-400">
-                        <?php echo esc_html( get_the_author_meta( 'description' ) ?: __( 'Author', 'rodolfo' ) ); ?>
+                        <?php echo esc_html( $rodolfo_guest ? __( 'Author', 'rodolfo' ) : ( get_the_author_meta( 'description' ) ?: __( 'Author', 'rodolfo' ) ) ); ?>
                     </div>
                 </div>
 

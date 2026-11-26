@@ -17,6 +17,7 @@ if ( ! function_exists( 'rodolfo_has_sidebar' ) || ! rodolfo_has_sidebar() ) {
     return;
 }
 ?>
-<aside class="rodolfo-sidebar w-full lg:w-80 shrink-0" aria-label="<?php esc_attr_e( 'Sidebar', 'rodolfo' ); ?>">
-    <?php dynamic_sidebar( 'rodolfo-sidebar' ); ?>
+<aside class="tk-sidebar w-full lg:w-80 shrink-0" aria-label="<?php esc_attr_e( 'Sidebar', 'rodolfo' ); ?>">
+    <?php dynamic_sidebar( 'tk-sidebar' ); ?>
+    <?php if ( function_exists( 'rodolfo_preferred_source' ) ) { rodolfo_preferred_source( 'sidebar' ); } ?>
 </aside>

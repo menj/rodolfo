@@ -36,12 +36,12 @@ function rodolfo_comment_guard_fields() {
     }
     $now = time();
     ?>
-    <p class="rodolfo-hp-wrap" aria-hidden="true">
+    <p class="tk-hp-wrap" aria-hidden="true">
         <label for="rodolfo_hp"><?php esc_html_e( 'Leave this field empty', 'rodolfo' ); ?></label>
         <input type="text" name="rodolfo_hp" id="rodolfo_hp" value="" tabindex="-1" autocomplete="off" />
     </p>
     <input type="hidden" name="rodolfo_hp_time" value="<?php echo esc_attr( (string) $now ); ?>" />
-    <input type="hidden" name="rodolfo_hp_sig" value="<?php echo esc_attr( wp_hash( $now . '|rodolfo-comment-guard' ) ); ?>" />
+    <input type="hidden" name="rodolfo_hp_sig" value="<?php echo esc_attr( wp_hash( $now . '|tk-comment-guard' ) ); ?>" />
     <?php
     $site_key = trim( (string) get_option( 'rodolfo_turnstile_site' ) );
     if ( '' !== $site_key && '' !== trim( (string) get_option( 'rodolfo_turnstile_secret' ) ) ) {
@@ -89,7 +89,7 @@ function rodolfo_comment_guard_check( $commentdata ) {
     $time = isset( $_POST['rodolfo_hp_time'] ) ? (int) $_POST['rodolfo_hp_time'] : 0;
     $sig  = isset( $_POST['rodolfo_hp_sig'] ) ? (string) wp_unslash( $_POST['rodolfo_hp_sig'] ) : '';
     $min  = (int) apply_filters( 'rodolfo_comment_guard_min_seconds', 3 );
-    if ( 0 === $time || ! hash_equals( wp_hash( $time . '|rodolfo-comment-guard' ), $sig ) || ( time() - $time ) < $min ) {
+    if ( 0 === $time || ! hash_equals( wp_hash( $time . '|tk-comment-guard' ), $sig ) || ( time() - $time ) < $min ) {
         rodolfo_comment_guard_reject();
     }
 

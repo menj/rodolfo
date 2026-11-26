@@ -129,7 +129,7 @@ function rodolfo_unlist_column_cell( $column, $post_id ) {
     }
     $unlisted = in_array( (int) $post_id, rodolfo_unlisted_ids(), true );
     printf(
-        '<span class="rodolfo-unlist-state" data-unlisted="%s">%s</span>',
+        '<span class="tk-unlist-state" data-unlisted="%s">%s</span>',
         $unlisted ? '1' : '0',
         $unlisted ? esc_html__( 'Unlisted', 'rodolfo' ) : '—'
     );
@@ -162,7 +162,7 @@ function rodolfo_unlist_admin_assets( $hook ) {
     }
     $suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
     wp_enqueue_script(
-        'rodolfo-unlist-quick-edit',
+        'tk-unlist-quick-edit',
         get_template_directory_uri() . '/assets/js/unlist-quick-edit' . $suffix . '.js',
         array( 'inline-edit-post' ),
         RODOLFO_VERSION,

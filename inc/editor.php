@@ -33,27 +33,27 @@ function rodolfo_editor_palette() {
     $palette = array(
         array(
             'name'  => __( 'Brand cobalt', 'rodolfo' ),
-            'slug'  => 'rodolfo-accent',
+            'slug'  => 'tk-accent',
             'color' => '#3d54d6',
         ),
         array(
             'name'  => __( 'Ink', 'rodolfo' ),
-            'slug'  => 'rodolfo-ink',
+            'slug'  => 'tk-ink',
             'color' => '#0f172a',
         ),
         array(
             'name'  => __( 'Muted', 'rodolfo' ),
-            'slug'  => 'rodolfo-muted',
+            'slug'  => 'tk-muted',
             'color' => '#475569',
         ),
         array(
             'name'  => __( 'Hairline', 'rodolfo' ),
-            'slug'  => 'rodolfo-line',
+            'slug'  => 'tk-line',
             'color' => '#e2e8f0',
         ),
         array(
             'name'  => __( 'Page', 'rodolfo' ),
-            'slug'  => 'rodolfo-page',
+            'slug'  => 'tk-page',
             'color' => '#f8fafc',
         ),
     );
@@ -73,7 +73,7 @@ function rodolfo_editor_palette() {
         foreach ( array_values( rodolfo_category_palette() ) as $i => $hex ) {
             $palette[] = array(
                 'name'  => isset( $labels[ $i ] ) ? $labels[ $i ] : sprintf( __( 'Accent %d', 'rodolfo' ), $i + 1 ),
-                'slug'  => 'rodolfo-cat-' . ( $i + 1 ),
+                'slug'  => 'tk-cat-' . ( $i + 1 ),
                 'color' => $hex,
             );
         }
@@ -105,7 +105,7 @@ function rodolfo_editor_setup() {
     // Load the compiled theme CSS into the editor canvas.
     add_theme_support( 'editor-styles' );
     add_editor_style( 'assets/css/theme.min.css' );
-    add_editor_style( 'assets/css/editor.css' );
+    add_editor_style( 'assets/css/editor.min.css' );
 
     add_theme_support( 'editor-color-palette', rodolfo_editor_palette() );
     add_theme_support( 'editor-font-sizes', rodolfo_editor_font_sizes() );
@@ -134,6 +134,6 @@ add_action( 'after_setup_theme', 'rodolfo_editor_setup', 20 );
  * shim in editor.css scopes the prose rules to the editor's own wrapper.
  */
 function rodolfo_editor_body_class( $classes ) {
-    return $classes . ' rodolfo-editor';
+    return $classes . ' tk-editor';
 }
 add_filter( 'admin_body_class', 'rodolfo_editor_body_class' );

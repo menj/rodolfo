@@ -89,9 +89,9 @@ function rodolfo_donate_button( $label = '' ) {
         $label = __( 'Donate', 'rodolfo' );
     }
     return sprintf(
-        '<a class="rodolfo-donate" href="%1$s" target="_blank" rel="noopener">%2$s%3$s</a>',
+        '<a class="tk-donate" href="%1$s" target="_blank" rel="noopener">%2$s%3$s</a>',
         $url,
-        rodolfo_icon( 'heart', 'rodolfo-donate-icon' ),
+        rodolfo_icon( 'heart', 'tk-donate-icon' ),
         esc_html( $label )
     );
 }
@@ -125,7 +125,7 @@ function rodolfo_donate_auto_append( $content ) {
      */
     $block = apply_filters(
         'rodolfo_donate_auto_block',
-        '<p class="rodolfo-donate-auto">' . $button . '</p>',
+        '<p class="tk-donate-auto">' . $button . '</p>',
         $content
     );
     return $content . $block;
@@ -147,9 +147,9 @@ function rodolfo_donate_shortcode( $atts ) {
     $label = $atts['label'] !== '' ? $atts['label'] : __( 'Donate', 'rodolfo' );
 
     return sprintf(
-        '<a class="rodolfo-donate" href="%1$s" target="_blank" rel="noopener">%2$s%3$s</a>',
+        '<a class="tk-donate" href="%1$s" target="_blank" rel="noopener">%2$s%3$s</a>',
         $url,
-        rodolfo_icon( 'heart', 'rodolfo-donate-icon' ),
+        rodolfo_icon( 'heart', 'tk-donate-icon' ),
         esc_html( $label )
     );
 }

@@ -60,13 +60,6 @@ function rodolfo_system_report() {
     );
 
     // --- Feature health: does each optional feature have what it needs? --
-    $parser_tier = __( 'Built-in fallback — tables and task lists degrade', 'rodolfo' );
-    if ( class_exists( 'Parsedown' ) ) {
-        $parser_tier = __( 'Parsedown (already loaded by a plugin or another theme)', 'rodolfo' );
-    } elseif ( is_readable( get_template_directory() . '/vendor/parsedown/Parsedown.php' ) ) {
-        $parser_tier = __( 'Parsedown (bundled)', 'rodolfo' );
-    }
-
     $seo_active = function_exists( 'rodolfo_seo_plugin_active' ) && rodolfo_seo_plugin_active();
     $permalinks = get_option( 'permalink_structure' );
 
@@ -88,7 +81,6 @@ function rodolfo_system_report() {
         __( 'Virtual Routes (/tags/, /llms.txt)', 'rodolfo' ) => $permalinks
             ? __( 'Working — pretty permalinks enabled', 'rodolfo' )
             : __( 'Broken — permalinks are set to Plain, so these routes 404', 'rodolfo' ),
-        __( 'Documentation Parser', 'rodolfo' ) => $parser_tier,
         __( 'Self-hosted Inter', 'rodolfo' ) => is_readable( $font )
             ? __( 'Present', 'rodolfo' )
             : __( 'Not bundled — falling back to system sans-serif', 'rodolfo' ),
@@ -116,15 +108,10 @@ function rodolfo_system_report() {
         __( 'Series Nav', 'rodolfo' )   => get_option( 'rodolfo_series_enabled' ) ? __( 'On', 'rodolfo' ) : __( 'Off', 'rodolfo' ),
         __( 'Full-content RSS', 'rodolfo' ) => get_option( 'rodolfo_feed_full_content' ) ? __( 'On', 'rodolfo' ) : __( 'Off', 'rodolfo' ),
         __( 'Sidebar', 'rodolfo' ) => get_option( 'rodolfo_sidebar_enabled' )
-            ? ( is_active_sidebar( 'rodolfo-sidebar' )
+            ? ( is_active_sidebar( 'tk-sidebar' )
                 ? sprintf( /* translators: %s: scope */ __( 'On (%s)', 'rodolfo' ), (string) get_option( 'rodolfo_sidebar_scope', 'archives' ) )
                 : __( 'Enabled but empty — nothing renders until a widget is added', 'rodolfo' ) )
             : __( 'Off', 'rodolfo' ),
-        __( 'Donate Button', 'rodolfo' ) => get_option( 'rodolfo_donate_auto' )
-            ? sprintf( /* translators: %s: placement */ __( 'Auto (%s)', 'rodolfo' ), (string) get_option( 'rodolfo_donate_auto' ) )
-            : ( ( get_option( 'rodolfo_paypal_email' ) || get_option( 'rodolfo_donate_url' ) )
-                ? __( 'Configured — shortcode only', 'rodolfo' )
-                : __( 'Not configured', 'rodolfo' ) ),
         __( 'Custom Scripts', 'rodolfo' ) => ( get_option( 'rodolfo_header_scripts' ) || get_option( 'rodolfo_body_scripts' ) || get_option( 'rodolfo_footer_scripts' ) )
             ? __( 'Present — check these first when debugging front-end JS', 'rodolfo' )
             : __( 'None', 'rodolfo' ),
@@ -224,7 +211,7 @@ function rodolfo_system_report_download() {
 
     nocache_headers();
     header( 'Content-Type: application/json; charset=utf-8' );
-    header( 'Content-Disposition: attachment; filename=rodolfo-system-status-' . gmdate( 'Y-m-d' ) . '.json' );
+    header( 'Content-Disposition: attachment; filename=tk-system-status-' . gmdate( 'Y-m-d' ) . '.json' );
     echo wp_json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
     exit;
 }

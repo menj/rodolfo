@@ -74,16 +74,16 @@ function rodolfo_privacy_embed_gate( $html, $url = '' ) {
 
     ob_start();
     ?>
-    <div class="rodolfo-embed-gate"
+    <div class="tk-embed-gate"
          data-embed-src="<?php echo esc_url( $src ); ?>"
          data-embed-provider="<?php echo esc_attr( $provider ); ?>"
          data-embed-allow="<?php echo esc_attr( $allow ); ?>"
          data-embed-title="<?php echo esc_attr( $title ); ?>">
-        <button type="button" class="rodolfo-embed-gate-btn">
-            <span class="rodolfo-embed-gate-play" aria-hidden="true">
+        <button type="button" class="tk-embed-gate-btn">
+            <span class="tk-embed-gate-play" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" focusable="false"><path d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
             </span>
-            <span class="rodolfo-embed-gate-label">
+            <span class="tk-embed-gate-label">
                 <?php
                 /* translators: %s: embed provider name, e.g. YouTube */
                 printf( esc_html__( 'Load embed from %s', 'rodolfo' ), esc_html( $provider ) );
@@ -93,13 +93,13 @@ function rodolfo_privacy_embed_gate( $html, $url = '' ) {
                 ?>
             </span>
         </button>
-        <p class="rodolfo-embed-gate-note">
+        <p class="tk-embed-gate-note">
             <?php
             /* translators: %s: embed provider name */
             printf( esc_html__( 'Nothing is loaded from %s until you press play.', 'rodolfo' ), esc_html( $provider ) );
             ?>
-            <label class="rodolfo-embed-gate-remember">
-                <input type="checkbox" class="rodolfo-embed-gate-always" />
+            <label class="tk-embed-gate-remember">
+                <input type="checkbox" class="tk-embed-gate-always" />
                 <?php
                 /* translators: %s: embed provider name */
                 printf( esc_html__( 'Always load %s embeds', 'rodolfo' ), esc_html( $provider ) );

@@ -9,6 +9,7 @@ get_header();
 ?>
 
 <main id="content" class="flex-grow max-w-[1400px] mx-auto px-4 md:px-8 w-full pt-8 md:pt-12 pb-8 md:pb-12">
+    <?php if ( function_exists( 'rodolfo_breadcrumbs' ) ) { rodolfo_breadcrumbs(); } ?>
     <div class="mb-16">
 
         <div class="mb-10">

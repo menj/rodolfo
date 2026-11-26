@@ -18,7 +18,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 function rodolfo_social_card_available() {
-    return function_exists( 'imagecreatetruecolor' ) && function_exists( 'imagettftext' );
+    // Needs GD + FreeType AND a TTF to draw with. No TTF ships by default (it would
+    // add ~340 KB to the theme); drop one at assets/fonts/Inter-Bold.ttf to enable cards.
+    return function_exists( 'imagecreatetruecolor' ) && function_exists( 'imagettftext' )
+        && is_readable( get_template_directory() . '/assets/fonts/Inter-Bold.ttf' );
 }
 
 /**

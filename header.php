@@ -3,13 +3,6 @@
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <?php
-    // Typography: the font-sans stack falls back to system-ui when Inter is not
-    // installed locally. Remote Google Fonts requests were removed (GDPR — a
-    // German court has ruled embedding Google Fonts unlawful without consent,
-    // and WordPress.org flags remote font loading). To restore Inter, self-host
-    // the woff2 files in assets/fonts/ and add @font-face rules to input.css.
-    ?>
     <script>
         // Dark mode is opt-in: the site starts light unless the visitor has
         // explicitly chosen dark via the toggle. The OS `prefers-color-scheme`
@@ -32,7 +25,7 @@
 <?php if ( $bg_video ) : ?>
     <!-- Video Background (decorative; hidden under prefers-reduced-motion via style.css) -->
     <div 
-        class="rodolfo-bg-video fixed top-0 left-0 right-0 h-[800px] z-0 pointer-events-none opacity-[0.2] dark:opacity-[0.05] mix-blend-multiply dark:mix-blend-screen overflow-hidden"
+        class="tk-bg-video fixed top-0 left-0 right-0 h-[800px] z-0 pointer-events-none opacity-[0.2] dark:opacity-[0.05] mix-blend-multiply dark:mix-blend-screen overflow-hidden"
         style="mask-image: linear-gradient(to bottom, black 0%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);"
         aria-hidden="true"
     >
@@ -40,19 +33,13 @@
             <source src="<?php echo esc_url( $bg_video ); ?>" type="video/mp4">
         </video>
     </div>
-<?php else : ?>
-    <!-- Subtle Background Art -->
-    <div 
-        class="fixed top-0 left-0 right-0 h-[800px] z-0 pointer-events-none opacity-[0.08] dark:opacity-[0.02] mix-blend-multiply dark:mix-blend-screen"
-        style="background-image: url('<?php echo esc_url( get_template_directory_uri() ); ?>/assets/theme-bg.jpg'); background-size: cover; background-position: center top; mask-image: linear-gradient(to bottom, black 0%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);"
-        aria-hidden="true"
-    ></div>
 <?php endif; ?>
 
+<?php $header_layout = function_exists( 'rodolfo_choice' ) ? rodolfo_choice( 'rodolfo_header_layout' ) : 'left'; ?>
 <div class="relative z-10 flex flex-col flex-grow">
-    <header class="border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 transition-colors">
-        <div class="max-w-[1400px] mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-8">
-            <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="no-underline">
+    <header id="site-header" data-layout="<?php echo esc_attr( $header_layout ); ?>" class="hdr border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 transition-colors">
+        <div class="hdr-row max-w-[1400px] mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-8">
+            <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="no-underline" rel="home">
                 <div class="flex items-center gap-3 group cursor-pointer flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1">
                     <?php if ( has_custom_logo() ) :
                         // Constrained manually — the_custom_logo() outputs the
@@ -65,7 +52,9 @@
                             <img
                                 src="<?php echo esc_url( $logo_src[0] ); ?>"
                                 alt="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>"
-                                class="rodolfo-logo-img group-hover:opacity-80 transition-opacity"
+                                width="<?php echo (int) $logo_src[1]; ?>" height="<?php echo (int) $logo_src[2]; ?>"
+                                decoding="async" fetchpriority="high"
+                                class="tk-logo-img group-hover:opacity-80 transition-opacity"
                             />
                         <?php endif; ?>
                     <?php else : ?>
@@ -76,14 +65,14 @@
                         $site_name = get_bloginfo( 'name' );
                         $initial   = function_exists( 'mb_substr' ) ? mb_substr( $site_name, 0, 1 ) : substr( $site_name, 0, 1 );
                         ?>
-                        <div class="rodolfo-brand-mark bg-slate-100 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 group-hover:ring-2 ring-blue-500 transition-all flex items-center justify-center font-bold text-lg text-slate-600 dark:text-slate-300" aria-hidden="true">
+                        <div class="tk-brand-mark bg-slate-100 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 group-hover:ring-2 ring-blue-500 transition-all flex items-center justify-center font-bold text-lg text-slate-600 dark:text-slate-300" aria-hidden="true">
                             <?php echo esc_html( strtoupper( $initial ) ); ?>
                         </div>
                     <?php endif; ?>
-                    <div class="hidden sm:block max-w-sm">
-                        <div class="text-xl font-bold tracking-tight text-slate-900 dark:text-white"><?php bloginfo( 'name' ); ?></div>
-                        <div class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate"><?php bloginfo( 'description' ); ?></div>
-                    </div>
+                    <span class="hdr-brand hidden sm:block max-w-sm">
+                        <span class="block text-xl font-bold tracking-tight text-slate-900 dark:text-white"><?php bloginfo( 'name' ); ?></span>
+                        <span class="hdr-tagline block text-xs text-slate-500 dark:text-slate-400 font-medium truncate"><?php bloginfo( 'description' ); ?></span>
+                    </span>
                 </div>
             </a>
 
@@ -116,15 +105,15 @@
                     <?php echo rodolfo_icon( 'sun', 'w-5 h-5 hidden dark:block' ); ?>
                 </button>
 
-                <button id="rodolfo-mobile-toggle" class="rodolfo-mobile-toggle p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500" aria-expanded="false" aria-controls="rodolfo-mobile-menu" aria-label="<?php esc_attr_e( 'Menu', 'rodolfo' ); ?>">
-                    <span class="rodolfo-menu-open"><?php echo rodolfo_icon( 'menu', 'w-5 h-5' ); ?></span>
-                    <span class="rodolfo-menu-close"><?php echo rodolfo_icon( 'x', 'w-5 h-5' ); ?></span>
+                <button id="tk-mobile-toggle" class="tk-mobile-toggle p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500" aria-expanded="false" aria-controls="tk-mobile-menu" aria-label="<?php esc_attr_e( 'Menu', 'rodolfo' ); ?>">
+                    <span class="tk-menu-open"><?php echo rodolfo_icon( 'menu', 'w-5 h-5' ); ?></span>
+                    <span class="tk-menu-close"><?php echo rodolfo_icon( 'x', 'w-5 h-5' ); ?></span>
                 </button>
             </div>
         </div>
 
         <?php // Mobile navigation panel — toggled by the hamburger; hidden ≥768px via style.css. ?>
-        <div id="rodolfo-mobile-menu" class="rodolfo-mobile-menu">
+        <div id="tk-mobile-menu" class="tk-mobile-menu">
             <div class="max-w-[1400px] mx-auto px-4 py-4 flex flex-col gap-4">
                 <form role="search" method="get" class="search-form flex relative items-center" action="<?php echo esc_url( home_url( '/' ) ); ?>">
                     <?php echo rodolfo_icon( 'search', 'w-4 h-4 absolute left-3 text-slate-400 dark:text-slate-500' ); ?>

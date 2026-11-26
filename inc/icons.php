@@ -3,7 +3,6 @@
  * Inline SVG icon library — Lucide (https://lucide.dev, ISC licence), rendered server-side.
  *
  * Extracted verbatim from functions.php in 3.4.0 — a pure structural move,
- * no behavioural change. See docs/ssot.md for the module map.
  *
  * @package Rodolfo
  */

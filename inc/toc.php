@@ -84,7 +84,7 @@ function rodolfo_toc_process( $content ) {
     foreach ( $items as $it ) {
         $indent = 3 === $it['level'] ? ' style="padding-left:1rem"' : '';
         $li    .= sprintf(
-            '<li%s><a href="#%s" class="rodolfo-toc-link block py-1 text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">%s</a></li>',
+            '<li%s><a href="#%s" class="tk-toc-link block py-1 text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">%s</a></li>',
             $indent,
             esc_attr( $it['id'] ),
             esc_html( $it['text'] )
@@ -95,11 +95,11 @@ function rodolfo_toc_process( $content ) {
     // wires it; CSS collapses the list below md). Desktop stays always-open —
     // the button is display-inert there, so no behaviour changes.
     $GLOBALS['rodolfo_toc_html'] = sprintf(
-        '<nav class="rodolfo-toc mb-10 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-5 md:p-6" aria-label="%s">'
+        '<nav class="tk-toc mb-10 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-5 md:p-6" aria-label="%s">'
             . '<h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">'
-            . '<button type="button" class="rodolfo-toc-toggle" aria-expanded="false" aria-controls="rodolfo-toc-list">%s</button>'
+            . '<button type="button" class="tk-toc-toggle" aria-expanded="false" aria-controls="tk-toc-list">%s</button>'
             . '</h2>'
-            . '<ol id="rodolfo-toc-list" class="rodolfo-toc-list space-y-0.5 list-none pl-0 m-0">%s</ol>'
+            . '<ol id="tk-toc-list" class="tk-toc-list space-y-0.5 list-none pl-0 m-0">%s</ol>'
             . '</nav>',
         esc_attr__( 'Table of contents', 'rodolfo' ),
         esc_html__( 'On this page', 'rodolfo' ),

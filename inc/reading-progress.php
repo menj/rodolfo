@@ -35,13 +35,13 @@ function rodolfo_progress_render() {
     $position = ( 'bottom' === get_option( 'rodolfo_progress_position', 'top' ) ) ? 'bottom' : 'top';
     $accent   = function_exists( 'rodolfo_accent' ) ? rodolfo_accent() : '#3d54d6'; // Customizer accent (inc/accent.php).
     ?>
-    <div id="rodolfo-progress" role="progressbar" aria-label="<?php esc_attr_e( 'Reading progress', 'rodolfo' ); ?>" aria-hidden="true"
+    <div id="tk-progress" role="progressbar" aria-label="<?php esc_attr_e( 'Reading progress', 'rodolfo' ); ?>" aria-hidden="true"
          style="position:fixed;<?php echo esc_attr( $position ); ?>:0;left:0;width:100%;height:<?php echo (int) $height; ?>px;z-index:60;background:transparent;pointer-events:none">
-        <span id="rodolfo-progress-fill" style="display:block;height:100%;width:0;background:<?php echo esc_attr( $accent ); ?>;transition:width .1s linear"></span>
+        <span id="tk-progress-fill" style="display:block;height:100%;width:0;background:<?php echo esc_attr( $accent ); ?>;transition:width .1s linear"></span>
     </div>
     <script>
     (function () {
-        var fill = document.getElementById('rodolfo-progress-fill');
+        var fill = document.getElementById('tk-progress-fill');
         if (!fill) { return; }
         function update() {
             var h = document.documentElement;
@@ -73,12 +73,12 @@ function rodolfo_sticky_title_render() {
         return;
     }
     ?>
-    <div id="rodolfo-sticky-title" class="rodolfo-sticky-title" aria-hidden="true">
-        <span class="rodolfo-sticky-title-text"><?php echo esc_html( get_the_title() ); ?></span>
+    <div id="tk-sticky-title" class="tk-sticky-title" aria-hidden="true">
+        <span class="tk-sticky-title-text"><?php echo esc_html( get_the_title() ); ?></span>
     </div>
     <script>
     (function () {
-        var strip = document.getElementById('rodolfo-sticky-title');
+        var strip = document.getElementById('tk-sticky-title');
         var title = document.querySelector('article h1');
         if (!strip || !title || typeof IntersectionObserver === 'undefined') { return; }
         var header = document.querySelector('header.sticky');

@@ -7,7 +7,6 @@
  * admin UI so the rules can be read without wading through 700 lines of markup.
  *
  * Extracted from inc/options-page.php in 3.8.0 — a pure structural move, no
- * behavioural change. See docs/ssot.md for the module map.
  *
  * @package Rodolfo
  */
@@ -27,18 +26,18 @@ function rodolfo_optional_modules() {
         'related-posts'    => __( 'Related posts', 'rodolfo' ),
         'search-palette'   => __( '⌘K search palette', 'rodolfo' ),
         'tags'             => __( 'Virtual /tags/ page', 'rodolfo' ),
-        'click-to-tweet'   => __( 'Click to Tweet', 'rodolfo' ),
         'unlist'           => __( 'Unlist posts', 'rodolfo' ),
         'aeo'              => __( 'AEO answer blocks', 'rodolfo' ),
         'llms-txt'         => __( 'llms.txt for AI crawlers', 'rodolfo' ),
         'breadcrumbs'      => __( 'Breadcrumbs', 'rodolfo' ),
         'reading-progress' => __( 'Reading progress bar', 'rodolfo' ),
-        'donate'           => __( 'Donate button', 'rodolfo' ),
         'views'            => __( 'Post view counts', 'rodolfo' ),
         'author-social'    => __( 'Author social links', 'rodolfo' ),
         'privacy-embeds'   => __( 'Consent-gated embeds', 'rodolfo' ),
         'comment-guard'    => __( 'Comment guard', 'rodolfo' ),
         'post-display'     => __( 'Per-post display options', 'rodolfo' ),
+        'guest-authors'    => __( 'Guest authors', 'rodolfo' ),
+        'endmark'          => __( 'End-of-article mark', 'rodolfo' ),
     );
     // The constant is the single source of the slugs; labels must match it.
     return array_intersect_key( $labels, array_flip( RODOLFO_OPTIONAL_MODULES ) );
@@ -101,12 +100,6 @@ function rodolfo_option_sanitizers() {
     $map = array(
         'rodolfo_sticky_title'           => 'rodolfo_sanitize_checkbox',
         'rodolfo_footer_text'            => 'sanitize_text_field',
-        'rodolfo_twitter_handle'         => 'sanitize_text_field',
-        'rodolfo_donate_url'             => 'esc_url_raw',
-        'rodolfo_paypal_email'           => 'sanitize_email',
-        'rodolfo_donate_currency'        => 'rodolfo_sanitize_currency',
-        'rodolfo_donate_label'           => 'sanitize_text_field',
-        'rodolfo_donate_auto'            => 'rodolfo_sanitize_donate_auto',
         'rodolfo_progress_enabled'       => 'rodolfo_sanitize_checkbox',
         'rodolfo_progress_height'        => 'rodolfo_sanitize_progress_height',
         'rodolfo_progress_position'      => 'rodolfo_sanitize_progress_position',
@@ -154,6 +147,43 @@ function rodolfo_option_sanitizers() {
         'rodolfo_nav_locations'          => 'rodolfo_sanitize_nav_locations',
         'rodolfo_nav_order'              => 'rodolfo_sanitize_int_map',
         'rodolfo_footer_util'            => 'rodolfo_sanitize_footer_util',
+        // --- Layout & link-equity switches ---------------------------------
+        'rodolfo_home_layout'            => 'rodolfo_sanitize_home_layout',
+        'rodolfo_home_content_mode'      => 'rodolfo_sanitize_home_content_mode',
+        'rodolfo_header_layout'          => 'rodolfo_sanitize_header_layout',
+        'rodolfo_footer_columns'         => 'rodolfo_sanitize_footer_columns',
+        // --- Content / GEO -----------------------------------------------------
+        'rodolfo_llms_txt_template'      => 'rodolfo_sanitize_llms_template',
+        'rodolfo_ps_mode'                => 'rodolfo_sanitize_ps_mode',
+        'rodolfo_ps_placement'           => 'rodolfo_sanitize_ps_placement',
+        'rodolfo_ps_anchor'              => 'sanitize_text_field',
+        // --- Schema.org entity -------------------------------------------------
+        'rodolfo_org_type'               => 'rodolfo_sanitize_org_type',
+        'rodolfo_org_name'               => 'sanitize_text_field',
+        'rodolfo_org_knows_about'        => 'sanitize_text_field',
+        'rodolfo_article_type'           => 'rodolfo_sanitize_article_type',
+        // --- Guest authors -----------------------------------------------------
+        'rodolfo_ga_default'             => 'sanitize_text_field',
+        'rodolfo_ga_join'                => 'rodolfo_sanitize_ga_join',
+        'rodolfo_ga_scope'               => 'rodolfo_sanitize_ga_scope',
+        // --- End mark ----------------------------------------------------------
+        'rodolfo_em_enabled'             => 'rodolfo_sanitize_checkbox_on',
+        'rodolfo_em_pages'               => 'rodolfo_sanitize_checkbox',
+        'rodolfo_em_type'                => 'rodolfo_sanitize_em_type',
+        'rodolfo_em_symbol'              => 'sanitize_text_field',
+        'rodolfo_em_image'               => 'esc_url_raw',
+        'rodolfo_em_size'                => 'rodolfo_sanitize_em_size',
+        'rodolfo_em_placement'           => 'rodolfo_sanitize_em_placement',
+        'rodolfo_em_selector'            => 'rodolfo_sanitize_simple_selector',
+        'rodolfo_em_min_words'           => 'absint',
+        'rodolfo_em_exclude'             => 'rodolfo_sanitize_csv_ids',
+        'rodolfo_em_hide_small'          => 'rodolfo_sanitize_checkbox',
+        'rodolfo_em_margin'              => 'rodolfo_sanitize_css_length',
+        // --- Performance ---------------------------------------------------------
+        'rodolfo_inline_css'             => 'rodolfo_sanitize_checkbox',
+        'rodolfo_font_woff2'             => 'rodolfo_sanitize_checkbox',
+        'rodolfo_dequeue_block_library'  => 'rodolfo_sanitize_checkbox',
+        'rodolfo_dequeue_global_styles'  => 'rodolfo_sanitize_checkbox',
         'rodolfo_header_scripts'         => 'scripts',
         'rodolfo_body_scripts'           => 'scripts',
         'rodolfo_footer_scripts'         => 'scripts',
@@ -165,6 +195,94 @@ function rodolfo_option_sanitizers() {
         $map[ 'rodolfo_disable_' . $slug ] = 'rodolfo_sanitize_checkbox';
     }
     return $map;
+}
+
+
+/**
+ * Enumerated option registries. One source of truth for the sanitizers, the
+ * options screen and the renderers that read them.
+ */
+function rodolfo_choice_registry() {
+    return array(
+        'rodolfo_home_layout'       => array( 'stream' => __( 'Stream — single-column editorial feed', 'rodolfo' ), 'grid' => __( 'Grid — uniform 2/3-column cards', 'rodolfo' ), 'magazine' => __( 'Magazine — lead post + grid', 'rodolfo' ) ),
+        'rodolfo_home_content_mode' => array( 'card_excerpt' => __( 'Card excerpt (short)', 'rodolfo' ), 'long_excerpt' => __( 'Long excerpt (150+ words)', 'rodolfo' ), 'full' => __( 'Full post content', 'rodolfo' ) ),
+        'rodolfo_header_layout'     => array( 'left' => __( 'Left — logo left, navigation right', 'rodolfo' ), 'centered' => __( 'Centered — stacked logo and navigation', 'rodolfo' ), 'minimal' => __( 'Minimal — compact single row', 'rodolfo' ) ),
+        'rodolfo_footer_columns'    => array( '1' => __( '1 column', 'rodolfo' ), '2' => __( '2 columns', 'rodolfo' ), '3' => __( '3 columns', 'rodolfo' ) ),
+        'rodolfo_llms_txt_template' => array( 'editorial' => __( 'Editorial', 'rodolfo' ), 'minimal' => __( 'Minimal', 'rodolfo' ), 'structured' => __( 'Structured', 'rodolfo' ), 'directory' => __( 'Directory', 'rodolfo' ) ),
+        'rodolfo_ps_mode'           => array( 'deeplink' => __( 'Text link (no JavaScript)', 'rodolfo' ), 'js_standard' => __( 'Google button (loads Google JavaScript)', 'rodolfo' ), 'disabled' => __( 'Disabled', 'rodolfo' ) ),
+        'rodolfo_ps_placement'      => array( 'none' => __( 'Shortcode only', 'rodolfo' ), 'after_post' => __( 'After each post', 'rodolfo' ), 'footer' => __( 'Site footer', 'rodolfo' ), 'sidebar' => __( 'Sidebar', 'rodolfo' ) ),
+        'rodolfo_ga_join'           => array( 'natural' => __( 'A, B and C', 'rodolfo' ), 'comma' => __( 'A, B, C', 'rodolfo' ), 'ampersand' => __( 'A & B & C', 'rodolfo' ) ),
+        'rodolfo_ga_scope'          => array( 'all' => __( 'Everywhere the byline is shown', 'rodolfo' ), 'singular' => __( 'Single posts only', 'rodolfo' ) ),
+        'rodolfo_em_type'           => array( 'symbol' => __( 'Symbol', 'rodolfo' ), 'image' => __( 'Image', 'rodolfo' ) ),
+        'rodolfo_em_placement'      => array( 'last_paragraph' => __( 'End of the last paragraph', 'rodolfo' ), 'before_footnotes' => __( 'Before the footnotes', 'rodolfo' ), 'append' => __( 'After all content', 'rodolfo' ), 'selector' => __( 'Before a CSS class or id', 'rodolfo' ) ),
+        'rodolfo_org_type'          => array( 'Organization' => __( 'Organization', 'rodolfo' ), 'Person' => __( 'Person', 'rodolfo' ) ),
+        'rodolfo_article_type'      => array( 'BlogPosting' => 'BlogPosting', 'Article' => 'Article', 'NewsArticle' => 'NewsArticle' ),
+    );
+}
+
+function rodolfo_choice_default( $option ) {
+    $defaults = array(
+        'rodolfo_home_layout' => 'magazine', 'rodolfo_home_content_mode' => 'card_excerpt',
+        'rodolfo_header_layout' => 'left', 'rodolfo_footer_columns' => '2',
+        'rodolfo_llms_txt_template' => 'editorial', 'rodolfo_ps_mode' => 'deeplink',
+        'rodolfo_ps_placement' => 'none', 'rodolfo_org_type' => 'Organization',
+        'rodolfo_article_type' => 'BlogPosting',
+        'rodolfo_ga_join' => 'natural', 'rodolfo_ga_scope' => 'all',
+        'rodolfo_em_type' => 'symbol', 'rodolfo_em_placement' => 'last_paragraph',
+    );
+    return isset( $defaults[ $option ] ) ? $defaults[ $option ] : '';
+}
+
+/** Current value of an enumerated option, always one of its valid keys. */
+function rodolfo_choice( $option ) {
+    $registry = rodolfo_choice_registry();
+    $value    = (string) get_option( $option, rodolfo_choice_default( $option ) );
+    return isset( $registry[ $option ][ $value ] ) ? $value : rodolfo_choice_default( $option );
+}
+
+function rodolfo_sanitize_choice( $option, $value ) {
+    $registry = rodolfo_choice_registry();
+    $value    = (string) $value;
+    return isset( $registry[ $option ][ $value ] ) ? $value : rodolfo_choice_default( $option );
+}
+function rodolfo_sanitize_home_layout( $v )       { return rodolfo_sanitize_choice( 'rodolfo_home_layout', $v ); }
+function rodolfo_sanitize_home_content_mode( $v ) { return rodolfo_sanitize_choice( 'rodolfo_home_content_mode', $v ); }
+function rodolfo_sanitize_header_layout( $v )     { return rodolfo_sanitize_choice( 'rodolfo_header_layout', $v ); }
+function rodolfo_sanitize_footer_columns( $v )    { return rodolfo_sanitize_choice( 'rodolfo_footer_columns', $v ); }
+function rodolfo_sanitize_llms_template( $v )     { return rodolfo_sanitize_choice( 'rodolfo_llms_txt_template', $v ); }
+function rodolfo_sanitize_ps_mode( $v )           { return rodolfo_sanitize_choice( 'rodolfo_ps_mode', $v ); }
+function rodolfo_sanitize_ps_placement( $v )      { return rodolfo_sanitize_choice( 'rodolfo_ps_placement', $v ); }
+function rodolfo_sanitize_org_type( $v )          { return rodolfo_sanitize_choice( 'rodolfo_org_type', $v ); }
+function rodolfo_sanitize_article_type( $v )      { return rodolfo_sanitize_choice( 'rodolfo_article_type', $v ); }
+function rodolfo_sanitize_ga_join( $v )           { return rodolfo_sanitize_choice( 'rodolfo_ga_join', $v ); }
+function rodolfo_sanitize_ga_scope( $v )          { return rodolfo_sanitize_choice( 'rodolfo_ga_scope', $v ); }
+function rodolfo_sanitize_em_type( $v )           { return rodolfo_sanitize_choice( 'rodolfo_em_type', $v ); }
+function rodolfo_sanitize_em_placement( $v )      { return rodolfo_sanitize_choice( 'rodolfo_em_placement', $v ); }
+
+/** Checkbox that defaults to ON: an unchecked box must be stored as '0', not ''. */
+function rodolfo_sanitize_checkbox_on( $v ) {
+    return $v ? '1' : '0';
+}
+
+/** Comma-separated post IDs. */
+function rodolfo_sanitize_csv_ids( $v ) {
+    return implode( ',', array_filter( array_map( 'absint', explode( ',', (string) $v ) ) ) );
+}
+
+/** CSS length such as .25em, 4px or 0. */
+function rodolfo_sanitize_css_length( $v ) {
+    $v = trim( (string) $v );
+    return preg_match( '/^-?[0-9.]+(em|rem|px|%)?$/', $v ) ? $v : '';
+}
+
+/** Simple .class or #id selector. */
+function rodolfo_sanitize_simple_selector( $v ) {
+    $v = trim( (string) $v );
+    return preg_match( '/^[.#][A-Za-z0-9_-]+$/', $v ) ? $v : '';
+}
+
+function rodolfo_sanitize_em_size( $v ) {
+    return max( 8, min( 64, (int) $v ) );
 }
 
 function rodolfo_sanitize_checkbox( $value ) {
@@ -189,10 +307,6 @@ function rodolfo_sanitize_progress_height( $value ) {
     return min( 20, $value );
 }
 
-function rodolfo_sanitize_currency( $value ) {
-    $value = strtoupper( preg_replace( '/[^A-Za-z]/', '', (string) $value ) );
-    return ( 3 === strlen( $value ) ) ? $value : 'USD';
-}
 
 // Accept a bare address or a pasted "mailto:you@example.com"; store bare.
 function rodolfo_sanitize_social_email( $value ) {
@@ -207,9 +321,6 @@ function rodolfo_sanitize_card_variant( $value ) {
     return in_array( $value, array( 'dark', 'light' ), true ) ? $value : 'light';
 }
 
-function rodolfo_sanitize_donate_auto( $value ) {
-    return in_array( $value, array( 'posts', 'posts_pages' ), true ) ? $value : '';
-}
 
 // page_id => 'header'|'footer'|'hidden'. Drops invalid ids/values.
 function rodolfo_sanitize_nav_locations( $value ) {
