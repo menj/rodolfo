@@ -60,13 +60,18 @@ function rodolfo_export_settings() {
     $keys = array_keys( rodolfo_option_sanitizers() );
     $data = array();
     foreach ( $keys as $key ) {
+        // Exports omit credentials; privileged scripts require their own capability.
+        if ( 'rodolfo_turnstile_secret' === $key || ( ! current_user_can( 'unfiltered_html' ) && 'scripts' === rodolfo_option_sanitizers()[ $key ] ) ) {
+            continue;
+        }
         $data[ $key ] = get_option( $key );
     }
 
     $filename = 'rodolfo-settings-' . gmdate( 'Y-m-d' ) . '.json';
     header( 'Content-Type: application/json' );
     header( 'Content-Disposition: attachment; filename=' . $filename );
-    header( 'Pragma: no-cache' );
+    nocache_headers();
+    header( 'X-Content-Type-Options: nosniff' );
     echo wp_json_encode( $data, JSON_PRETTY_PRINT );
     exit;
 }
@@ -84,14 +89,19 @@ function rodolfo_import_settings() {
     $redirect = admin_url( 'themes.php?page=rodolfo-theme-options&tab=general' );
 
     $tmp = isset( $_FILES['rodolfo_import_file']['tmp_name'] ) ? $_FILES['rodolfo_import_file']['tmp_name'] : '';
-    if ( '' === $tmp || ! is_uploaded_file( $tmp ) ) {
+    if ( ! is_string( $tmp ) || '' === $tmp || ! is_uploaded_file( $tmp ) ) {
         wp_safe_redirect( add_query_arg( 'rodolfo_notice', 'import_empty', $redirect ) );
         exit;
     }
 
     // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- server-generated upload path, verified by is_uploaded_file() above.
+    $bytes = filesize( $tmp );
+    if ( false === $bytes || $bytes > 1024 * 1024 ) {
+        wp_safe_redirect( add_query_arg( 'rodolfo_notice', 'import_invalid', $redirect ) );
+        exit;
+    }
     $raw = file_get_contents( $tmp );
-    $data = json_decode( $raw, true );
+    $data = is_string( $raw ) ? json_decode( $raw, true ) : null;
 
     if ( ! is_array( $data ) ) {
         wp_safe_redirect( add_query_arg( 'rodolfo_notice', 'import_invalid', $redirect ) );

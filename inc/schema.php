@@ -32,6 +32,12 @@ function rodolfo_schema_output() {
     if ( is_404() ) {
         return;
     }
+    if ( is_singular() ) {
+        $post = get_queried_object();
+        if ( ! $post || 'publish' !== $post->post_status || ! empty( $post->post_password ) ) {
+            return;
+        }
+    }
 
     $graph = array();
     $home  = home_url( '/' );
@@ -156,11 +162,9 @@ function rodolfo_schema_output() {
             $page_type = 'ContactPage';
         } elseif ( in_array( $slug, array( 'about', 'about-us', 'about-me' ), true ) ) {
             $page_type = 'AboutPage';
-        } elseif ( in_array( $slug, array( 'faq', 'faqs', 'frequently-asked-questions' ), true ) ) {
-            // aeo.php emits FAQPage with the actual Q/As when the shortcodes are
-            // used; only claim the type here, never duplicate the questions.
-            $page_type = 'FAQPage';
         }
+        // aeo.php emits FAQPage only when actual questions are rendered.
+        // A page slug alone does not establish a FAQPage with mainEntity.
 
         $desc = function_exists( 'rodolfo_meta_description' ) ? rodolfo_meta_description() : '';
         $node = array(
@@ -301,7 +305,7 @@ function rodolfo_schema_output() {
 
     $data = array( '@context' => 'https://schema.org', '@graph' => $graph );
     echo "\n<script type=\"application/ld+json\">"
-        . wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
+        . wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
         . "</script>\n";
 }
 add_action( 'wp_head', 'rodolfo_schema_output', 6 );

@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function rodolfo_reading_time( $post = null ) {
     $post = get_post( $post );
-    if ( ! $post ) {
+    if ( ! $post || post_password_required( $post ) ) {
         return 0;
     }
 
@@ -208,7 +208,8 @@ function rodolfo_feed_full_content( $content ) {
         return $content;
     }
     $post = get_post();
-    if ( ! $post ) {
+    // Public feeds must never bypass WordPress's password gate.
+    if ( ! $post || 'publish' !== $post->post_status || ! empty( $post->post_password ) ) {
         return $content;
     }
     return apply_filters( 'the_content', $post->post_content );
