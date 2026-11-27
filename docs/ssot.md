@@ -79,7 +79,7 @@ Current version: **3.10.1** (version is read from `style.css` via `wp_get_theme(
 
 **Docs parser fallback — keep it.** Tier 3 (`rodolfo_docs_markdown_to_html()`) never executes in a correctly packaged release, because `vendor/parsedown/` always ships. It is retained deliberately, and should not be deleted as dead code:
 
-- **Parsedown 1.8.0 is unmaintained** (2019; CI stops at PHP 8.1). If a future PHP release breaks it at instantiation, `rodolfo_docs_parser()` catches the `Error` and falls through — the Documentation tab degrades instead of fatalling the admin screen. This is the mitigation that made bundling an unmaintained library acceptable in the first place.
+- **Parsedown 1.8.0** is the upstream stable release (commit `96baaad`), with security and PHP 8.4 compatibility fixes. Keep the fallback: if a parser supplied by a plugin or the bundled copy fails at construction, `rodolfo_docs_parser()` catches the error and falls through instead of breaking the admin screen.
 - It also covers `vendor/` being stripped downstream by a build pipeline or repackager.
 - Cost is nil: zero runtime overhead when Parsedown loads, and a test assertion pins it at "minimal" so it cannot regrow into a second full parser.
 

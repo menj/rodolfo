@@ -1,9 +1,9 @@
 === Rodolfo ===
 Contributors: menj
 Tags: custom-colors, custom-menu, featured-images, threaded-comments, translation-ready, dark-mode, tailwind
-Requires at least: 5.0
+Requires at least: 6.4
 Tested up to: 6.4
-Requires PHP: 7.2
+Requires PHP: 7.4
 Stable tag: 3.10.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -66,6 +66,13 @@ Parsedown class if another plugin or theme has already loaded one, and falls
 back to a small built-in renderer if the bundled copy is unavailable.
 
 == Changelog ==
+
+= 3.10.1 =
+* Security: preserve protected content in RSS, metadata, JSON-LD and social cards; harden image fetching, settings exports and imports, and crawler guidance.
+* Fix: related-post query precedence, robots output, FAQ schema and share-image fallback.
+* Performance: bounded social-card caching on sites with a persistent object cache.
+* Maintenance: PHP and WordPress smoke-test CI; patched development dependency overrides.
+* Compatibility: declared minimum WordPress 6.4 and PHP 7.4; use a currently supported PHP version in production.
 
 = 3.10.0 =
 * New: optional consent-gated embeds. YouTube, Vimeo, SoundCloud and Spotify load only when the reader presses play — no third-party connection, no tracking cookies before that.

@@ -14,5 +14,10 @@
     "@tailwindcss/cli": "^4.0.0",
     "@tailwindcss/typography": "^0.5.15",
     "esbuild": "^0.25.0"
+  },
+  "overrides": {
+    "@tailwindcss/typography": {
+      "postcss-selector-parser": "6.1.5"
+    }
   }
 }

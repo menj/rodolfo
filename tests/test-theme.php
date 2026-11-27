@@ -452,7 +452,7 @@ rd_check( 'unlist excludes via pre_get_posts', strpos( rd_read( 'inc/unlist.php'
 rd_check( 'unlist keeps singular live', strpos( rd_read( 'inc/unlist.php' ), 'is_singular()' ) !== false );
 rd_check( 'login module loaded', strpos( $funcs, "'login'" ) !== false );
 rd_check( 'login brands wp-login', strpos( rd_read( 'inc/login.php' ), 'login_enqueue_scripts' ) !== false );
-rd_check( 'search results noindex', strpos( rd_read( 'inc/meta-tags.php' ), 'noindex,follow' ) !== false );
+rd_check( 'search results noindex via core robots filter', strpos( $meta, "add_filter( 'wp_robots', 'rodolfo_meta_robots'" ) !== false && strpos( $meta, 'is_search() || is_paged() || is_author() || is_date()' ) !== false && strpos( $meta, "\$robots['noindex'] = true;" ) !== false );
 rd_check( 'ctt styles present', strpos( $style, '.rodolfo-ctt' ) !== false );
 
 // 1.11.0 — built-in Tags page, nav taxonomy, card redesign.
