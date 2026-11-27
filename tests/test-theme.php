@@ -695,6 +695,12 @@ rd_check( 'related queries override base parameters via array_merge', strpos( $p
 rd_check( 'settings export excludes Turnstile secret', strpos( $p1_acts, "'rodolfo_turnstile_secret' === \$key" ) !== false );
 rd_check( 'esbuild dependency has security patch baseline', strpos( rd_read( 'package.json' ), '"esbuild": "^0.25.0"' ) !== false );
 
+rd_check( 'card cache requires persistent object cache', strpos( $p8_card, 'wp_using_ext_object_cache()' ) !== false );
+rd_check( 'card cache excludes authenticated requests', strpos( $p8_card, '! is_user_logged_in()' ) !== false );
+rd_check( 'card cache checks signature and bounds size', strpos( $p8_card, "\$signature !== \$entry['signature']" ) !== false && strpos( $p8_card, '512 * 1024' ) !== false );
+rd_check( 'card cache uses short public TTL', strpos( $p8_card, 'max-age=300' ) !== false );
+rd_check( 'card honors disabled avatars', strpos( $p8_card, "get_option( 'show_avatars' )" ) !== false );
+
 echo "\n";
 echo str_repeat( '=', 48 ) . "\n";
 printf( "Rodolfo tests: %d passed, %d failed\n", $pass, $fail );

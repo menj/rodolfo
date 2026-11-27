@@ -5,7 +5,7 @@ Canonical reference for every setting, hook, template, and convention in the the
 
 **Accessibility baseline (2.9.0).** Meaningful text never lighter than slate-500 on light backgrounds (slate-400 reserved for dark mode / decorative); global `prefers-reduced-motion` override in style.css — which also hides the autoplay background video entirely (`.rodolfo-bg-video video`); both decorative background wrappers in `header.php` are `aria-hidden`; ⌘K palette restores focus on close; :focus-visible outlines on non-Tailwind interactive elements.
 
-Current version: **3.10.0** (version is read from `style.css` via `wp_get_theme()->get('Version')`, exposed as the `RODOLFO_VERSION` constant; readme.txt `Stable tag` must match).
+Current version: **3.10.1** (version is read from `style.css` via `wp_get_theme()->get('Version')`, exposed as the `RODOLFO_VERSION` constant; readme.txt `Stable tag` must match).
 
 **Design reference.** The theme is named after and visually modelled on [Rodolfo Berrios' blog](https://rodolfoberrios.com/). The homage is **aesthetic only** — that site runs VuePress, not WordPress, so nothing about its architecture carries over. Concretely, the borrowed elements are the "Name blogging since YEAR" footer line, the deliberately minimal header nav, and the tag-driven structure. When these docs or the theme description reference the blog, use the canonical URL `https://rodolfoberrios.com/` (an earlier `rodolfo.berrios.com` in readme.md was a typo, fixed in 3.0.0).
 
