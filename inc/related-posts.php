@@ -22,13 +22,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return WP_Post[]
  */
 function rodolfo_get_related_posts( $post_id, $limit = 3 ) {
-    $limit = (int) $limit;
+    $limit = max( 1, min( 20, (int) $limit ) );
 
     $tag_ids = wp_get_post_tags( $post_id, array( 'fields' => 'ids' ) );
     $cat_ids = wp_get_post_categories( $post_id, array( 'fields' => 'ids' ) );
 
+    $unlisted = function_exists( 'rodolfo_unlisted_ids' ) ? rodolfo_unlisted_ids() : array();
     $base = array(
-        'post__not_in'        => array( (int) $post_id ),
+        'post_type'           => 'post',
+        'post_status'         => 'publish',
+        'has_password'        => false,
+        'post__not_in'        => array_merge( array( (int) $post_id ), $unlisted ),
         'posts_per_page'      => $limit,
         'ignore_sticky_posts' => true,
         'no_found_rows'       => true,
@@ -45,7 +49,7 @@ function rodolfo_get_related_posts( $post_id, $limit = 3 ) {
     if ( '' !== trim( $pinned_raw ) ) {
         foreach ( array_map( 'absint', explode( ',', $pinned_raw ) ) as $pin ) {
             $pin_post = $pin ? get_post( $pin ) : null;
-            if ( $pin_post && 'publish' === $pin_post->post_status && (int) $post_id !== $pin_post->ID ) {
+            if ( $pin_post && 'post' === $pin_post->post_type && 'publish' === $pin_post->post_status && empty( $pin_post->post_password ) && (int) $post_id !== $pin_post->ID && ! in_array( $pin_post->ID, $unlisted, true ) ) {
                 $found[ $pin_post->ID ] = $pin_post;
             }
         }
@@ -60,12 +64,12 @@ function rodolfo_get_related_posts( $post_id, $limit = 3 ) {
     //    and scored in PHP (overlap count desc, then recency), because SQL
     //    can't order by tag-intersection size without a custom join.
     if ( ! empty( $tag_ids ) ) {
-        $exclude = array_merge( array( (int) $post_id ), wp_list_pluck( $found, 'ID' ) );
-        $q = new WP_Query( $base + array(
+        $exclude = array_merge( $base['post__not_in'], wp_list_pluck( $found, 'ID' ) );
+        $q = new WP_Query( array_merge( $base, array(
             'tag__in'        => $tag_ids,
             'post__not_in'   => $exclude,
             'posts_per_page' => max( $limit * 4, 12 ),
-        ) );
+        ) ) );
         $scored = array();
         foreach ( $q->posts as $candidate ) {
             $overlap = count( array_intersect(
@@ -84,12 +88,12 @@ function rodolfo_get_related_posts( $post_id, $limit = 3 ) {
 
     // 2) Top up from shared categories, without duplicating.
     if ( count( $found ) < $limit && ! empty( $cat_ids ) ) {
-        $exclude = array_merge( array( (int) $post_id ), wp_list_pluck( $found, 'ID' ) );
-        $q = new WP_Query( $base + array(
+        $exclude = array_merge( $base['post__not_in'], wp_list_pluck( $found, 'ID' ) );
+        $q = new WP_Query( array_merge( $base, array(
             'category__in' => $cat_ids,
             'post__not_in' => $exclude,
             'posts_per_page' => $limit - count( $found ),
-        ) );
+        ) ) );
         $found = array_merge( $found, $q->posts );
     }
 
