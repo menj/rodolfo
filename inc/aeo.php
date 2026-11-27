@@ -76,19 +76,28 @@ function rodolfo_faq_shortcode( $atts, $content = null ) {
     if ( '' === $question || '' === $answer ) {
         return '';
     }
+    // Render nested shortcodes once: they may be expensive or have side effects.
+    $rendered_answer = wp_kses_post( wpautop( do_shortcode( $answer ) ) );
     rodolfo_faq_items( array(
-        'q' => $question,
-        'a' => wp_strip_all_tags( do_shortcode( $answer ) ),
+        'q' => wp_strip_all_tags( $question ),
+        'a' => wp_strip_all_tags( $rendered_answer ),
     ) );
     return '<details class="rodolfo-faq"' . ( 'yes' === $atts['open'] ? ' open' : '' ) . '>'
         . '<summary class="rodolfo-faq-q">' . esc_html( $question ) . '</summary>'
-        . '<div class="rodolfo-faq-a">' . wp_kses_post( wpautop( do_shortcode( $answer ) ) ) . '</div>'
+        . '<div class="rodolfo-faq-a">' . $rendered_answer . '</div>'
         . '</details>';
 }
 add_shortcode( 'faq', 'rodolfo_faq_shortcode' );
 
 /** Emit FAQPage JSON-LD for the Q/As actually rendered on this page. */
 function rodolfo_faq_jsonld() {
+    if ( ! is_singular() ) {
+        return;
+    }
+    $post = get_queried_object();
+    if ( ! $post || 'publish' !== $post->post_status || ! empty( $post->post_password ) || ( function_exists( 'rodolfo_is_coming_soon' ) && rodolfo_is_coming_soon( $post ) ) ) {
+        return;
+    }
     $items = rodolfo_faq_items();
     if ( empty( $items ) ) {
         return;
@@ -118,7 +127,7 @@ function rodolfo_faq_jsonld() {
         '@type'      => 'FAQPage',
         'mainEntity' => $entities,
     );
-    echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
+    echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
 }
 add_action( 'wp_footer', 'rodolfo_faq_jsonld' );
 

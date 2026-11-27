@@ -46,11 +46,22 @@ function rodolfo_social_card_avatar( $user_id, $size = 72 ) {
     if ( ! $url ) {
         return false;
     }
-    $resp = wp_remote_get( $url, array( 'timeout' => 3 ) );
+    // Avatar plugins/filters can change the URL. Validate destinations
+    // (including redirects), and bound downloaded bytes.
+    $resp = wp_safe_remote_get( $url, array(
+        'timeout'             => 3,
+        'redirection'         => 1,
+        'limit_response_size' => 512 * 1024,
+    ) );
     if ( is_wp_error( $resp ) || 200 !== (int) wp_remote_retrieve_response_code( $resp ) ) {
         return false;
     }
-    $src = @imagecreatefromstring( wp_remote_retrieve_body( $resp ) );
+    $body = wp_remote_retrieve_body( $resp );
+    $info = @getimagesizefromstring( $body );
+    if ( ! $info || $info[0] < 1 || $info[1] < 1 || $info[0] > 1024 || $info[1] > 1024 ) {
+        return false;
+    }
+    $src = @imagecreatefromstring( $body );
     if ( ! $src ) {
         return false;
     }
@@ -88,12 +99,21 @@ function rodolfo_social_card_logo( $max_h = 44 ) {
     if ( ! $path || ! is_readable( $path ) ) {
         return false;
     }
+    $bytes = @filesize( $path );
+    $info  = @getimagesize( $path );
+    if ( false === $bytes || $bytes > 8 * 1024 * 1024 || ! $info || $info[0] < 1 || $info[1] < 1 || $info[0] * $info[1] > 8 * 1024 * 1024 ) {
+        return false;
+    }
     $src = @imagecreatefromstring( (string) file_get_contents( $path ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- local attachment file.
     if ( ! $src ) {
         return false;
     }
     $ratio = imagesy( $src ) > 0 ? $max_h / imagesy( $src ) : 0;
     $out_w = max( 1, (int) round( imagesx( $src ) * $ratio ) );
+    if ( $out_w > 480 ) {
+        imagedestroy( $src );
+        return false;
+    }
     $out   = imagecreatetruecolor( $out_w, $max_h );
     imagesavealpha( $out, true );
     imagefill( $out, 0, 0, imagecolorallocatealpha( $out, 0, 0, 0, 127 ) );
@@ -103,14 +123,16 @@ function rodolfo_social_card_logo( $max_h = 44 ) {
 }
 
 function rodolfo_social_card_render() {
-    $id = (int) get_query_var( 'rodolfo_card' );
-    if ( ! $id ) {
+    $raw_id = get_query_var( 'rodolfo_card' );
+    if ( '' === $raw_id || null === $raw_id || false === $raw_id ) {
         return;
     }
-    $post = get_post( $id );
-    if ( ! $post || 'publish' !== $post->post_status || ! rodolfo_social_card_available() ) {
+    $id = is_scalar( $raw_id ) && preg_match( '/^[0-9]+$/D', (string) $raw_id ) ? (int) $raw_id : 0;
+    $post = $id > 0 ? get_post( $id ) : null;
+    if ( ! $post || 'post' !== $post->post_type || 'publish' !== $post->post_status || ! empty( $post->post_password ) || ! rodolfo_social_card_available() ) {
         status_header( 404 );
-        return;
+        nocache_headers();
+        exit;
     }
 
     $w = 1200;

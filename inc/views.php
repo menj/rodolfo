@@ -56,13 +56,14 @@ function rodolfo_views_record() {
         return;
     }
 
-    // Per-visitor throttle. IP + UA is not a privacy identifier, it's an
-    // opaque hash used only to prevent one visitor inflating a count in the
-    // same window. Never stored — just the transient key.
+    // Key the throttle by a salted IP/post hash, not arbitrary User-Agent
+    // strings. Shared-IP visitors may be counted once per window.
     $ip     = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '';
-    $ua     = isset( $_SERVER['HTTP_USER_AGENT'] ) ? (string) $_SERVER['HTTP_USER_AGENT'] : '';
+    if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+        return;
+    }
     $window = (int) apply_filters( 'rodolfo_views_throttle', HOUR_IN_SECONDS );
-    $key    = 'rodolfo_v_' . substr( md5( $ip . '|' . $ua . '|' . $post_id ), 0, 20 );
+    $key    = 'rodolfo_v_' . substr( wp_hash( $ip . '|' . $post_id ), 0, 20 );
     if ( $window > 0 && get_transient( $key ) ) {
         return;
     }

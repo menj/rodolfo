@@ -682,6 +682,19 @@ rd_check( 'palette recents local-only, capped at five', strpos( $p8_js, 'rodolfo
 // 8.5 — comment form skin.
 rd_check( 'comment fields grid on wider screens', strpos( $style, '.comment-form .comment-form-author { grid-column: 1 / 2; }' ) !== false );
 
+// Security hardening regressions. Static checks supplement, not replace, WP integration tests.
+rd_check( 'RSS full content excludes password-protected posts', strpos( rd_read( 'inc/reading-time.php' ), '! empty( $post->post_password )' ) !== false );
+rd_check( 'metadata excludes protected posts', strpos( rd_read( 'inc/meta-tags.php' ), '! empty( $post->post_password )' ) !== false );
+rd_check( 'schema JSON is HTML-safe', strpos( $schema, 'JSON_HEX_TAG' ) !== false );
+rd_check( 'FAQ JSON is HTML-safe', strpos( rd_read( 'inc/aeo.php' ), 'JSON_HEX_TAG' ) !== false );
+rd_check( 'social cards use safe bounded HTTP requests', strpos( $p8_card, 'wp_safe_remote_get(' ) !== false && strpos( $p8_card, 'limit_response_size' ) !== false && strpos( $p8_card, 'getimagesizefromstring' ) !== false );
+rd_check( 'social cards exclude protected posts', strpos( $p8_card, '! empty( $post->post_password )' ) !== false );
+rd_check( 'llms.txt excludes protected posts and respects site visibility', strpos( $p1_llms, "'has_password' => false" ) !== false && strpos( $p1_llms, "get_option( 'blog_public' )" ) !== false );
+rd_check( 'AI crawler guidance does not override wildcard robots restrictions', strpos( $p1_llms, 'User-agent: $bot' ) === false );
+rd_check( 'related queries override base parameters via array_merge', strpos( $p8_rel, 'new WP_Query( array_merge( $base' ) !== false );
+rd_check( 'settings export excludes Turnstile secret', strpos( $p1_acts, "'rodolfo_turnstile_secret' === \$key" ) !== false );
+rd_check( 'esbuild dependency has security patch baseline', strpos( rd_read( 'package.json' ), '"esbuild": "^0.25.0"' ) !== false );
+
 echo "\n";
 echo str_repeat( '=', 48 ) . "\n";
 printf( "Rodolfo tests: %d passed, %d failed\n", $pass, $fail );

@@ -60,7 +60,14 @@ function rodolfo_meta_description() {
     $desc = '';
     if ( is_singular() ) {
         $post = get_queried_object();
-        if ( $post && ! empty( $post->post_excerpt ) ) {
+        // Metadata can be cached independently of the password form.
+        if ( ! $post || 'publish' !== $post->post_status || ! empty( $post->post_password ) ) {
+            return '';
+        }
+        if ( function_exists( 'rodolfo_is_coming_soon' ) && rodolfo_is_coming_soon( $post ) ) {
+            return '';
+        }
+        if ( ! empty( $post->post_excerpt ) ) {
             $desc = $post->post_excerpt;
         } elseif ( $post ) {
             $desc = wp_strip_all_tags( strip_shortcodes( $post->post_content ) );
@@ -88,6 +95,12 @@ function rodolfo_meta_description() {
  * Falls back to the generated social card for singular posts (inc/social-card.php).
  */
 function rodolfo_meta_image() {
+    if ( is_singular() ) {
+        $post = get_queried_object();
+        if ( ! $post || 'publish' !== $post->post_status || ! empty( $post->post_password ) ) {
+            return '';
+        }
+    }
     if ( is_singular() && has_post_thumbnail() ) {
         $src = wp_get_attachment_image_src( get_post_thumbnail_id(), 'full' );
         if ( $src ) {
@@ -95,7 +108,10 @@ function rodolfo_meta_image() {
         }
     }
     if ( is_singular( 'post' ) && function_exists( 'rodolfo_social_card_url' ) ) {
-        return rodolfo_social_card_url( get_queried_object_id() );
+        $card = rodolfo_social_card_url( get_queried_object_id() );
+        if ( $card ) {
+            return $card;
+        }
     }
     // Site-wide fallback: custom logo, else the bundled site-icon PNG.
     $logo_id = get_theme_mod( 'custom_logo' );
@@ -113,13 +129,17 @@ function rodolfo_meta_tags() {
         return;
     }
 
-    // Keep thin/duplicate-content views out of search indexes. Search results,
-    // paged subpages, and author/date archives add no unique indexable value.
-    // (Folds in the old "WP SEO Search" plugin behaviour, natively.)
-    if ( is_search() || is_paged() || is_author() || is_date() ) {
-        echo "\n<meta name=\"robots\" content=\"noindex,follow\" />\n";
-        if ( is_search() ) {
-            return; // Nothing else worth emitting for a search results page.
+    // Leave robots output to the shared WordPress filter below.
+    if ( is_search() ) {
+        return;
+    }
+    if ( is_singular() ) {
+        $post = get_queried_object();
+        if ( ! $post || 'publish' !== $post->post_status || ! empty( $post->post_password ) ) {
+            return;
+        }
+        if ( function_exists( 'rodolfo_is_coming_soon' ) && rodolfo_is_coming_soon( $post ) ) {
+            return;
         }
     }
 
@@ -170,3 +190,16 @@ function rodolfo_meta_tags() {
     }
 }
 add_action( 'wp_head', 'rodolfo_meta_tags', 5 );
+
+/** Use core's single robots tag; do not conflict with SEO plugins. */
+function rodolfo_meta_robots( $robots ) {
+    if ( rodolfo_seo_plugin_active() ) {
+        return $robots;
+    }
+    if ( is_search() || is_paged() || is_author() || is_date() ) {
+        unset( $robots['index'] );
+        $robots['noindex'] = true;
+    }
+    return $robots;
+}
+add_filter( 'wp_robots', 'rodolfo_meta_robots' );

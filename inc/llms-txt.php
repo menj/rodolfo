@@ -53,7 +53,11 @@ function rodolfo_llms_txt_body() {
         $lines[] = '';
         $lines[] = '## Pages';
         $lines[] = '';
+        $unlisted = function_exists( 'rodolfo_unlisted_ids' ) ? rodolfo_unlisted_ids() : array();
         foreach ( $pages as $page ) {
+            if ( 'publish' !== $page->post_status || ! empty( $page->post_password ) || in_array( (int) $page->ID, $unlisted, true ) || ( function_exists( 'rodolfo_is_coming_soon' ) && rodolfo_is_coming_soon( $page ) ) ) {
+                continue;
+            }
             $lines[] = '- [' . get_the_title( $page->ID ) . '](' . get_permalink( $page->ID ) . ')';
         }
     }
@@ -61,6 +65,7 @@ function rodolfo_llms_txt_body() {
     $posts = get_posts( array(
         'numberposts'  => 20,
         'post_status'  => 'publish',
+        'has_password' => false,
         // Unlisted posts are hidden from listings, search, and feeds; keep
         // them out of the AI-crawler summary too. get_posts() bypasses the
         // unlist module's main-query filter, so exclude explicitly.
@@ -95,6 +100,12 @@ function rodolfo_llms_txt_body() {
 function rodolfo_llms_output() {
     if ( ! apply_filters( 'rodolfo_llms_txt_enabled', true ) ) {
         return;
+    }
+    // The plain-permalink fallback runs before template_redirect.
+    if ( ! get_option( 'blog_public' ) || get_option( 'rodolfo_maintenance_mode' ) ) {
+        status_header( 404 );
+        nocache_headers();
+        exit;
     }
     status_header( 200 );
     header( 'Content-Type: text/plain; charset=utf-8' );
@@ -140,15 +151,11 @@ add_action( 'init', 'rodolfo_llms_request_fallback', 20 );
  * Only appends to the WordPress-generated virtual robots.txt — a physical
  * robots.txt file is never touched.
  */
-function rodolfo_ai_robots( $output ) {
-    if ( ! apply_filters( 'rodolfo_ai_crawlers_welcome', true ) ) {
+function rodolfo_ai_robots( $output, $public = true ) {
+    if ( ! $public || ! apply_filters( 'rodolfo_ai_crawlers_welcome', true ) ) {
         return $output;
     }
-    $bots = array( 'GPTBot', 'OAI-SearchBot', 'ClaudeBot', 'Claude-SearchBot', 'PerplexityBot', 'Google-Extended', 'CCBot' );
-    $output .= "\n# AI crawlers — see also: " . home_url( '/llms.txt' ) . "\n";
-    foreach ( $bots as $bot ) {
-        $output .= "User-agent: $bot\nAllow: /\n";
-    }
-    return $output;
+    // Bot-specific Allow groups would override wildcard restrictions.
+    return $output . "\n# AI crawler guidance (existing rules apply): " . home_url( '/llms.txt' ) . "\n";
 }
-add_filter( 'robots_txt', 'rodolfo_ai_robots' );
+add_filter( 'robots_txt', 'rodolfo_ai_robots', 10, 2 );
