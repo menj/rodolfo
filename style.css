@@ -4,7 +4,9 @@ Theme URI: https://github.com/menj
 Author: MENJ
 Author URI: https://github.com/menj
 Description: A modern, responsive WordPress theme featuring a subtle flowing background art, Tailwind CSS, dark mode support, and a clean typography-focused design. Inspired by the design of Rodolfo Berrios' blog (https://rodolfoberrios.com/).
-Version: 3.10.0
+Version: 3.10.1
+Requires at least: 6.4
+Requires PHP: 7.4
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: rodolfo

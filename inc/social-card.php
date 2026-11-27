@@ -42,6 +42,9 @@ add_filter( 'query_vars', 'rodolfo_social_card_query_var' );
  * Network fetch is capped short and failures degrade gracefully (no avatar).
  */
 function rodolfo_social_card_avatar( $user_id, $size = 72 ) {
+    if ( ! get_option( 'show_avatars' ) ) {
+        return false;
+    }
     $url = get_avatar_url( $user_id, array( 'size' => $size * 2 ) );
     if ( ! $url ) {
         return false;
@@ -122,6 +125,73 @@ function rodolfo_social_card_logo( $max_h = 44 ) {
     return $out;
 }
 
+/**
+ * Cache only anonymous, public responses in a persistent object cache.
+ * No database transients or public files containing obsolete post titles.
+ * A single cache slot per post prevents key churn when branding changes.
+ */
+function rodolfo_social_card_cache_enabled() {
+    return wp_using_ext_object_cache() && ! is_user_logged_in()
+        && (bool) apply_filters( 'rodolfo_social_card_cache_enabled', true );
+}
+
+function rodolfo_social_card_cache_signature( $post, $category, $accent, $variant ) {
+    $logo_id = (int) get_theme_mod( 'custom_logo' );
+    $logo = $logo_id ? get_post( $logo_id ) : null;
+    return hash( 'sha256', (string) wp_json_encode( array(
+        RODOLFO_VERSION,
+        $post->ID,
+        $post->post_modified_gmt,
+        get_the_title( $post ),
+        $post->post_author,
+        get_the_author_meta( 'display_name', $post->post_author ),
+        $category,
+        $accent,
+        $variant,
+        get_bloginfo( 'name' ),
+        get_locale(),
+        $logo_id,
+        $logo ? $logo->post_modified_gmt : '',
+        (bool) get_option( 'show_avatars' ),
+    ) ) );
+}
+
+function rodolfo_social_card_cache_get( $post_id, $signature ) {
+    if ( ! rodolfo_social_card_cache_enabled() ) {
+        return false;
+    }
+    $entry = wp_cache_get( 'card:' . (int) $post_id, 'rodolfo_social_cards' );
+    if ( ! is_array( $entry ) || ! isset( $entry['signature'], $entry['png'] )
+        || $signature !== $entry['signature'] || ! is_string( $entry['png'] )
+        || strlen( $entry['png'] ) > 512 * 1024 || 0 !== strpos( $entry['png'], "\x89PNG\r\n\x1a\n" ) ) {
+        return false;
+    }
+    return $entry['png'];
+}
+
+function rodolfo_social_card_cache_set( $post_id, $signature, $png ) {
+    if ( rodolfo_social_card_cache_enabled() && is_string( $png )
+        && strlen( $png ) <= 512 * 1024 && 0 === strpos( $png, "\x89PNG\r\n\x1a\n" ) ) {
+        wp_cache_set( 'card:' . (int) $post_id, array( 'signature' => $signature, 'png' => $png ), 'rodolfo_social_cards', HOUR_IN_SECONDS );
+    }
+}
+
+function rodolfo_social_card_send( $png ) {
+    if ( ! headers_sent() ) {
+        status_header( 200 );
+        header( 'Content-Type: image/png' );
+        header( 'X-Content-Type-Options: nosniff' );
+        // Limit downstream staleness if a public post becomes protected.
+        if ( is_user_logged_in() ) {
+            nocache_headers();
+        } else {
+            header( 'Cache-Control: public, max-age=300' );
+        }
+    }
+    echo $png; // phpcs:ignore WordPress.Security.EscapeOutput -- validated binary PNG, not HTML.
+    exit;
+}
+
 function rodolfo_social_card_render() {
     $raw_id = get_query_var( 'rodolfo_card' );
     if ( '' === $raw_id || null === $raw_id || false === $raw_id ) {
@@ -135,10 +205,6 @@ function rodolfo_social_card_render() {
         exit;
     }
 
-    $w = 1200;
-    $h = 630;
-    $img = imagecreatetruecolor( $w, $h );
-
     // Vertical gradient. Light is the default, matching the site's own default
     // appearance; a dark variant is offered for sites whose branding calls for
     // it. Both are legible against light and dark social feeds.
@@ -151,6 +217,21 @@ function rodolfo_social_card_render() {
     list( $ar, $ag, $ab ) = sscanf( $accent, '#%02x%02x%02x' );
 
     $variant = (string) get_option( 'rodolfo_card_variant', 'light' );
+    $signature = rodolfo_social_card_cache_signature( $post, $cat_name, $accent, $variant );
+    $cached = rodolfo_social_card_cache_get( $post->ID, $signature );
+    if ( false !== $cached ) {
+        rodolfo_social_card_send( $cached );
+    }
+
+    $w = 1200;
+    $h = 630;
+    $img = imagecreatetruecolor( $w, $h );
+    if ( ! $img ) {
+        status_header( 500 );
+        nocache_headers();
+        exit;
+    }
+
     if ( 'light' === $variant ) {
         $c1 = array( 248, 250, 252 ); // #f8fafc
         $c2 = array( 219, 234, 254 ); // #dbeafe
@@ -203,7 +284,7 @@ function rodolfo_social_card_render() {
         foreach ( $words as $word ) {
             $try = trim( $line . ' ' . $word );
             $box = imagettfbbox( $size, 0, $font, $try );
-            if ( $box[2] - $box[0] > $w - $pad * 2 && $line ) {
+            if ( false !== $box && $box[2] - $box[0] > $w - $pad * 2 && $line ) {
                 $lines[] = $line;
                 $line    = $word;
             } else {
@@ -251,12 +332,16 @@ function rodolfo_social_card_render() {
         imagestring( $img, 5, $pad, $h - 80, get_the_author_meta( 'display_name', $post->post_author ) . ' · ' . get_bloginfo( 'name' ), $muted );
     }
 
-    if ( ! headers_sent() ) {
-        header( 'Content-Type: image/png' );
-        header( 'Cache-Control: public, max-age=86400' );
-    }
-    imagepng( $img );
+    ob_start();
+    $success = imagepng( $img );
+    $png = ob_get_clean();
     imagedestroy( $img );
-    exit;
+    if ( ! $success || ! is_string( $png ) || 0 !== strpos( $png, "\x89PNG\r\n\x1a\n" ) ) {
+        status_header( 500 );
+        nocache_headers();
+        exit;
+    }
+    rodolfo_social_card_cache_set( $post->ID, $signature, $png );
+    rodolfo_social_card_send( $png );
 }
 add_action( 'template_redirect', 'rodolfo_social_card_render' );

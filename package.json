@@ -1,6 +1,6 @@
 {
   "name": "rodolfo-theme",
-  "version": "3.10.0",
+  "version": "3.10.1",
   "description": "Build tooling for the Rodolfo WordPress theme (Tailwind CSS v4 CLI).",
   "license": "GPL-2.0-or-later",
   "private": true,
@@ -14,5 +14,10 @@
     "@tailwindcss/cli": "^4.0.0",
     "@tailwindcss/typography": "^0.5.15",
     "esbuild": "^0.25.0"
+  },
+  "overrides": {
+    "@tailwindcss/typography": {
+      "postcss-selector-parser": "6.1.5"
+    }
   }
 }

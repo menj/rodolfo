@@ -5,7 +5,7 @@ Canonical reference for every setting, hook, template, and convention in the the
 
 **Accessibility baseline (2.9.0).** Meaningful text never lighter than slate-500 on light backgrounds (slate-400 reserved for dark mode / decorative); global `prefers-reduced-motion` override in style.css — which also hides the autoplay background video entirely (`.rodolfo-bg-video video`); both decorative background wrappers in `header.php` are `aria-hidden`; ⌘K palette restores focus on close; :focus-visible outlines on non-Tailwind interactive elements.
 
-Current version: **3.10.0** (version is read from `style.css` via `wp_get_theme()->get('Version')`, exposed as the `RODOLFO_VERSION` constant; readme.txt `Stable tag` must match).
+Current version: **3.10.1** (version is read from `style.css` via `wp_get_theme()->get('Version')`, exposed as the `RODOLFO_VERSION` constant; readme.txt `Stable tag` must match).
 
 **Design reference.** The theme is named after and visually modelled on [Rodolfo Berrios' blog](https://rodolfoberrios.com/). The homage is **aesthetic only** — that site runs VuePress, not WordPress, so nothing about its architecture carries over. Concretely, the borrowed elements are the "Name blogging since YEAR" footer line, the deliberately minimal header nav, and the tag-driven structure. When these docs or the theme description reference the blog, use the canonical URL `https://rodolfoberrios.com/` (an earlier `rodolfo.berrios.com` in readme.md was a typo, fixed in 3.0.0).
 
@@ -79,7 +79,7 @@ Current version: **3.10.0** (version is read from `style.css` via `wp_get_theme(
 
 **Docs parser fallback — keep it.** Tier 3 (`rodolfo_docs_markdown_to_html()`) never executes in a correctly packaged release, because `vendor/parsedown/` always ships. It is retained deliberately, and should not be deleted as dead code:
 
-- **Parsedown 1.8.0 is unmaintained** (2019; CI stops at PHP 8.1). If a future PHP release breaks it at instantiation, `rodolfo_docs_parser()` catches the `Error` and falls through — the Documentation tab degrades instead of fatalling the admin screen. This is the mitigation that made bundling an unmaintained library acceptable in the first place.
+- **Parsedown 1.8.0** is the upstream stable release (commit `96baaad`), with security and PHP 8.4 compatibility fixes. Keep the fallback: if a parser supplied by a plugin or the bundled copy fails at construction, `rodolfo_docs_parser()` catches the error and falls through instead of breaking the admin screen.
 - It also covers `vendor/` being stripped downstream by a build pipeline or repackager.
 - Cost is nil: zero runtime overhead when Parsedown loads, and a test assertion pins it at "minimal" so it cannot regrow into a second full parser.
 

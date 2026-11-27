@@ -18,9 +18,9 @@
  * class_exists() check in rodolfo_docs_parser() is what makes bundling safe.
  * Tier 3 keeps the tab working if the vendor directory is stripped from a
  * distribution — and, more importantly, if Parsedown itself fails to load.
- * Parsedown 1.8.0 is unmaintained (2019; CI stops at PHP 8.1), so a future PHP
- * release breaking it is the realistic failure mode; the catch in
- * rodolfo_docs_parser() falls through here rather than fatalling wp-admin.
+ * The bundled stable Parsedown 1.8.0 includes security and modern PHP fixes.
+ * A plugin may still supply another version; the catch in rodolfo_docs_parser()
+ * falls through here if construction fails rather than fatalling wp-admin.
  * DO NOT delete this as dead code: it does not execute in a correctly packaged
  * release, which is exactly the point. See docs/ssot.md for the full rationale.
  *

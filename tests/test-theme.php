@@ -452,7 +452,7 @@ rd_check( 'unlist excludes via pre_get_posts', strpos( rd_read( 'inc/unlist.php'
 rd_check( 'unlist keeps singular live', strpos( rd_read( 'inc/unlist.php' ), 'is_singular()' ) !== false );
 rd_check( 'login module loaded', strpos( $funcs, "'login'" ) !== false );
 rd_check( 'login brands wp-login', strpos( rd_read( 'inc/login.php' ), 'login_enqueue_scripts' ) !== false );
-rd_check( 'search results noindex', strpos( rd_read( 'inc/meta-tags.php' ), 'noindex,follow' ) !== false );
+rd_check( 'search results noindex via core robots filter', strpos( $meta, "add_filter( 'wp_robots', 'rodolfo_meta_robots'" ) !== false && strpos( $meta, 'is_search() || is_paged() || is_author() || is_date()' ) !== false && strpos( $meta, "\$robots['noindex'] = true;" ) !== false );
 rd_check( 'ctt styles present', strpos( $style, '.rodolfo-ctt' ) !== false );
 
 // 1.11.0 — built-in Tags page, nav taxonomy, card redesign.
@@ -694,6 +694,12 @@ rd_check( 'AI crawler guidance does not override wildcard robots restrictions', 
 rd_check( 'related queries override base parameters via array_merge', strpos( $p8_rel, 'new WP_Query( array_merge( $base' ) !== false );
 rd_check( 'settings export excludes Turnstile secret', strpos( $p1_acts, "'rodolfo_turnstile_secret' === \$key" ) !== false );
 rd_check( 'esbuild dependency has security patch baseline', strpos( rd_read( 'package.json' ), '"esbuild": "^0.25.0"' ) !== false );
+
+rd_check( 'card cache requires persistent object cache', strpos( $p8_card, 'wp_using_ext_object_cache()' ) !== false );
+rd_check( 'card cache excludes authenticated requests', strpos( $p8_card, '! is_user_logged_in()' ) !== false );
+rd_check( 'card cache checks signature and bounds size', strpos( $p8_card, "\$signature !== \$entry['signature']" ) !== false && strpos( $p8_card, '512 * 1024' ) !== false );
+rd_check( 'card cache uses short public TTL', strpos( $p8_card, 'max-age=300' ) !== false );
+rd_check( 'card honors disabled avatars', strpos( $p8_card, "get_option( 'show_avatars' )" ) !== false );
 
 echo "\n";
 echo str_repeat( '=', 48 ) . "\n";

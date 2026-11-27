@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+## [3.10.1] - 2026-11-27
+
+### Security
+- Preserve password protection in RSS, metadata, JSON-LD and generated social cards.
+- Encode JSON-LD for HTML script contexts; validate remote image URLs and bound image decoding.
+- Exclude protected content from llms.txt and related-post queries; preserve existing robots restrictions.
+- Omit Turnstile secrets from exports; limit imports and reduce view-counter key churn.
+- Raise esbuild baseline to 0.25.x.
+
+### Fixed
+- Correct related-post query overrides, robots metadata duplication, FAQ schema classification and share-image fallback.
+
+### Performance
+- Cache anonymous social cards for one hour when persistent WordPress object caching is available. No cache files or database transients are created. Cache entries are bounded to 512 KiB and invalidated by a signature of the post and branding; public HTTP caching is limited to five minutes.
+
+### Validation
+- Add static security regression checks and CI for PHP lint, the static suite, JavaScript syntax and npm advisory checks. WordPress staging validation remains required before distribution.
+
 ### Added
 - **Accent colour picker** (Customizer → Colors). One control recolours the entire theme — links, buttons, category pills, reading progress, the login screen, the maintenance page, even the options screen. Possible cleanly because the accent system was already variable-driven: the module just overrides `--rodolfo-accent` and three derived shades, and prints nothing at all when the default cobalt is untouched. Hover/focus shades are computed from the picked hue, so there is never a second stored colour to drift.
 - **Feature toggles** (Theme Options → Features). Sixteen optional modules can be switched off individually — a disabled module is never even loaded, so unused features cost zero. Structural modules and modules that own content structures are deliberately not offered. Storage is inverted (`rodolfo_disable_<slug>`), so existing installs keep everything on.

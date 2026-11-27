@@ -1,0 +1,82 @@
+name: Theme quality
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: PHP syntax validation
+        run: find . -type f -name '*.php' -print0 | xargs -0 -n 1 php -l
+      - name: Static regression suite
+        run: php tests/test-theme.php
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax validation
+        run: find assets/js -type f -name '*.js' -print0 | xargs -0 -n 1 node --check
+      - name: Resolve dependencies
+        run: |
+          if test -f package-lock.json; then
+            npm ci --ignore-scripts --no-audit --no-fund
+          else
+            npm install --ignore-scripts --no-audit --no-fund
+            # Temporary bootstrap: record the public lockfile for review and commit.
+            base64 -w 1000 package-lock.json | sed 's/^/RODOLFO_LOCK_CHUNK:/'
+          fi
+      - name: Dependency advisory check
+        run: npm audit --audit-level=moderate
+      - name: Verify asset build
+        run: npm run build && npm run minify:js
+  wordpress:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - wordpress: '6.4'
+            php: '7.4'
+          - wordpress: latest
+            php: '8.4'
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: ci-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli, gd, mbstring
+          coverage: none
+      - name: Install disposable WordPress and test theme
+        env:
+          WP_VERSION: ${{ matrix.wordpress }}
+        run: bash tests/wp-smoke.sh
